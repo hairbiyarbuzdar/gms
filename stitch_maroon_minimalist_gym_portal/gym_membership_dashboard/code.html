@@ -1,0 +1,320 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Elite Gym - Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-primary-fixed": "#410000",
+                      "inverse-surface": "#313030",
+                      "on-tertiary-container": "#94a0ff",
+                      "on-tertiary": "#ffffff",
+                      "outline": "#8e706c",
+                      "surface-dim": "#dcd9d9",
+                      "surface-container-low": "#f6f3f2",
+                      "on-error": "#ffffff",
+                      "tertiary-container": "#0021b9",
+                      "surface-container-high": "#eae7e7",
+                      "on-surface-variant": "#5a413d",
+                      "background": "#fcf9f8",
+                      "primary": "#570000",
+                      "tertiary": "#00137f",
+                      "on-primary-fixed-variant": "#8f0f07",
+                      "secondary-fixed": "#e2e2e2",
+                      "primary-fixed": "#ffdad4",
+                      "secondary-fixed-dim": "#c6c6c7",
+                      "surface-tint": "#b22b1d",
+                      "on-secondary-fixed": "#1a1c1c",
+                      "inverse-on-surface": "#f3f0ef",
+                      "on-primary": "#ffffff",
+                      "surface-bright": "#fcf9f8",
+                      "on-secondary-container": "#5f6161",
+                      "surface-container-highest": "#e5e2e1",
+                      "on-primary-container": "#ff8371",
+                      "primary-container": "#800000",
+                      "tertiary-fixed-dim": "#bcc2ff",
+                      "on-tertiary-fixed-variant": "#1830c2",
+                      "surface-container": "#f0eded",
+                      "on-tertiary-fixed": "#000c61",
+                      "tertiary-fixed": "#dfe0ff",
+                      "outline-variant": "#e2bfb9",
+                      "on-secondary-fixed-variant": "#454747",
+                      "on-surface": "#1c1b1b",
+                      "secondary": "#5d5f5f",
+                      "error-container": "#ffdad6",
+                      "secondary-container": "#dcdddd",
+                      "on-secondary": "#ffffff",
+                      "primary-fixed-dim": "#ffb4a8",
+                      "on-background": "#1c1b1b",
+                      "surface": "#fcf9f8",
+                      "inverse-primary": "#ffb4a8",
+                      "surface-variant": "#e5e2e1",
+                      "surface-container-lowest": "#ffffff",
+                      "error": "#ba1a1a",
+                      "on-error-container": "#93000a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "stack-md": "16px",
+                      "container-max": "1200px",
+                      "stack-lg": "32px",
+                      "gutter": "24px",
+                      "stack-sm": "8px",
+                      "margin-x": "32px"
+              },
+              "fontFamily": {
+                      "headline-sm": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "label-caps": [
+                              "Inter"
+                      ],
+                      "headline-md-mobile": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "display-lg": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-caps": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md-mobile": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        /* Minimalist chart grid lines */
+        .chart-grid {
+            background-image: linear-gradient(to bottom, #F4F4F4 1px, transparent 1px);
+            background-size: 100% 32px;
+        }
+    </style>
+<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}[type='text'],input:where(:not([type])),[type='email'],[type='url'],[type='password'],[type='number'],[type='date'],[type='datetime-local'],[type='month'],[type='search'],[type='tel'],[type='time'],[type='week'],[multiple],textarea,select{-webkit-appearance:none;appearance:none;background-color:#fff;border-color:#6b7280;border-width:1px;border-radius:0px;padding-top:0.5rem;padding-right:0.75rem;padding-bottom:0.5rem;padding-left:0.75rem;font-size:1rem;line-height:1.5rem;--tw-shadow:0 0 #0000;}[type='text']:focus, input:where(:not([type])):focus, [type='email']:focus, [type='url']:focus, [type='password']:focus, [type='number']:focus, [type='date']:focus, [type='datetime-local']:focus, [type='month']:focus, [type='search']:focus, [type='tel']:focus, [type='time']:focus, [type='week']:focus, [multiple]:focus, textarea:focus, select:focus{outline:2px solid transparent;outline-offset:2px;--tw-ring-inset:var(--tw-empty,/*!*/ /*!*/);--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:#2563eb;--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);border-color:#2563eb}input::placeholder,textarea::placeholder{color:#6b7280;opacity:1}::-webkit-datetime-edit-fields-wrapper{padding:0}::-webkit-date-and-time-value{min-height:1.5em;text-align:inherit}::-webkit-datetime-edit{display:inline-flex}::-webkit-datetime-edit,::-webkit-datetime-edit-year-field,::-webkit-datetime-edit-month-field,::-webkit-datetime-edit-day-field,::-webkit-datetime-edit-hour-field,::-webkit-datetime-edit-minute-field,::-webkit-datetime-edit-second-field,::-webkit-datetime-edit-millisecond-field,::-webkit-datetime-edit-meridiem-field{padding-top:0;padding-bottom:0}select{background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");background-position:right 0.5rem center;background-repeat:no-repeat;background-size:1.5em 1.5em;padding-right:2.5rem;print-color-adjust:exact}[multiple],[size]:where(select:not([size="1"])){background-image:initial;background-position:initial;background-repeat:unset;background-size:initial;padding-right:0.75rem;print-color-adjust:unset}[type='checkbox'],[type='radio']{-webkit-appearance:none;appearance:none;padding:0;print-color-adjust:exact;display:inline-block;vertical-align:middle;background-origin:border-box;-webkit-user-select:none;user-select:none;flex-shrink:0;height:1rem;width:1rem;color:#2563eb;background-color:#fff;border-color:#6b7280;border-width:1px;--tw-shadow:0 0 #0000}[type='checkbox']{border-radius:0px}[type='radio']{border-radius:100%}[type='checkbox']:focus,[type='radio']:focus{outline:2px solid transparent;outline-offset:2px;--tw-ring-inset:var(--tw-empty,/*!*/ /*!*/);--tw-ring-offset-width:2px;--tw-ring-offset-color:#fff;--tw-ring-color:#2563eb;--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow)}[type='checkbox']:checked,[type='radio']:checked{border-color:transparent;background-color:currentColor;background-size:100% 100%;background-position:center;background-repeat:no-repeat}[type='checkbox']:checked{background-image:url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");}@media (forced-colors: active) {[type='checkbox']:checked{-webkit-appearance:auto;appearance:auto}}[type='radio']:checked{background-image:url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='8' cy='8' r='3'/%3e%3c/svg%3e");}@media (forced-colors: active) {[type='radio']:checked{-webkit-appearance:auto;appearance:auto}}[type='checkbox']:checked:hover,[type='checkbox']:checked:focus,[type='radio']:checked:hover,[type='radio']:checked:focus{border-color:transparent;background-color:currentColor}[type='checkbox']:indeterminate{background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 16 16'%3e%3cpath stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 8h8'/%3e%3c/svg%3e");border-color:transparent;background-color:currentColor;background-size:100% 100%;background-position:center;background-repeat:no-repeat;}@media (forced-colors: active) {[type='checkbox']:indeterminate{-webkit-appearance:auto;appearance:auto}}[type='checkbox']:indeterminate:hover,[type='checkbox']:indeterminate:focus{border-color:transparent;background-color:currentColor}[type='file']{background:unset;border-color:inherit;border-width:0;border-radius:0;padding:0;font-size:unset;line-height:inherit}[type='file']:focus{outline:1px solid ButtonText;outline:1px auto -webkit-focus-ring-color}.relative{position:relative}.z-10{z-index:10}.mx-auto{margin-left:auto;margin-right:auto}.mb-stack-lg{margin-bottom:32px}.mb-stack-md{margin-bottom:16px}.ml-1{margin-left:0.25rem}.mt-2{margin-top:0.5rem}.mt-4{margin-top:1rem}.mt-stack-md{margin-top:16px}.flex{display:flex}.grid{display:grid}.hidden{display:none}.h-10{height:2.5rem}.h-12{height:3rem}.h-16{height:4rem}.h-20{height:5rem}.h-24{height:6rem}.h-32{height:8rem}.h-4{height:1rem}.h-40{height:10rem}.h-full{height:100%}.min-h-\[200px\]{min-height:200px}.min-h-\[884px\]{min-height:884px}.w-1\/6{width:16.666667%}.w-10{width:2.5rem}.w-12{width:3rem}.w-8{width:2rem}.w-full{width:100%}.max-w-container-max{max-width:1200px}.flex-shrink-0{flex-shrink:0}.flex-grow{flex-grow:1}.scale-95{--tw-scale-x:.95;--tw-scale-y:.95;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}.flex-col{flex-direction:column}.items-end{align-items:flex-end}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-2{gap:0.5rem}.gap-gutter{gap:24px}.space-x-4 > :not([hidden]) ~ :not([hidden]){--tw-space-x-reverse:0;margin-right:calc(1rem * var(--tw-space-x-reverse));margin-left:calc(1rem * calc(1 - var(--tw-space-x-reverse)))}.space-x-6 > :not([hidden]) ~ :not([hidden]){--tw-space-x-reverse:0;margin-right:calc(1.5rem * var(--tw-space-x-reverse));margin-left:calc(1.5rem * calc(1 - var(--tw-space-x-reverse)))}.space-x-8 > :not([hidden]) ~ :not([hidden]){--tw-space-x-reverse:0;margin-right:calc(2rem * var(--tw-space-x-reverse));margin-left:calc(2rem * calc(1 - var(--tw-space-x-reverse)))}.overflow-hidden{overflow:hidden}.rounded{border-radius:0.125rem}.rounded-full{border-radius:0.75rem}.rounded-lg{border-radius:0.25rem}.rounded-t-sm{border-top-left-radius:0.125rem;border-top-right-radius:0.125rem}.border{border-width:1px}.border-b{border-bottom-width:1px}.border-b-2{border-bottom-width:2px}.border-t{border-top-width:1px}.border-outline-variant{--tw-border-opacity:1;border-color:rgb(226 191 185 / var(--tw-border-opacity, 1))}.border-primary{--tw-border-opacity:1;border-color:rgb(87 0 0 / var(--tw-border-opacity, 1))}.border-opacity-50{--tw-border-opacity:0.5}.bg-background{--tw-bg-opacity:1;background-color:rgb(252 249 248 / var(--tw-bg-opacity, 1))}.bg-primary{--tw-bg-opacity:1;background-color:rgb(87 0 0 / var(--tw-bg-opacity, 1))}.bg-surface{--tw-bg-opacity:1;background-color:rgb(252 249 248 / var(--tw-bg-opacity, 1))}.bg-surface-container-low{--tw-bg-opacity:1;background-color:rgb(246 243 242 / var(--tw-bg-opacity, 1))}.bg-surface-variant{--tw-bg-opacity:1;background-color:rgb(229 226 225 / var(--tw-bg-opacity, 1))}.object-cover{object-fit:cover}.p-2{padding:0.5rem}.p-stack-md{padding:16px}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-4{padding-left:1rem;padding-right:1rem}.px-margin-x{padding-left:32px;padding-right:32px}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.py-stack-lg{padding-top:32px;padding-bottom:32px}.py-stack-sm{padding-top:8px;padding-bottom:8px}.pb-1{padding-bottom:0.25rem}.pt-stack-sm{padding-top:8px}.text-center{text-align:center}.font-body-lg{font-family:Inter}.font-body-md{font-family:Inter}.font-display-lg{font-family:Inter}.font-headline-md{font-family:Inter}.font-headline-sm{font-family:Inter}.font-label-caps{font-family:Inter}.text-\[10px\]{font-size:10px}.text-body-lg{font-size:16px;line-height:24px;font-weight:400}.text-body-md{font-size:14px;line-height:20px;font-weight:400}.text-display-lg{font-size:48px;line-height:56px;letter-spacing:-0.02em;font-weight:700}.text-headline-md{font-size:24px;line-height:32px;letter-spacing:-0.01em;font-weight:600}.text-headline-sm{font-size:20px;line-height:28px;font-weight:600}.text-label-caps{font-size:12px;line-height:16px;letter-spacing:0.05em;font-weight:600}.font-bold{font-weight:700}.font-semibold{font-weight:600}.leading-tight{line-height:1.25}.text-on-background{--tw-text-opacity:1;color:rgb(28 27 27 / var(--tw-text-opacity, 1))}.text-on-primary{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.text-on-surface{--tw-text-opacity:1;color:rgb(28 27 27 / var(--tw-text-opacity, 1))}.text-primary{--tw-text-opacity:1;color:rgb(87 0 0 / var(--tw-text-opacity, 1))}.text-secondary{--tw-text-opacity:1;color:rgb(93 95 95 / var(--tw-text-opacity, 1))}.text-opacity-50{--tw-text-opacity:0.5}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-colors{transition-property:color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.duration-200{transition-duration:200ms}.last\:border-0:last-child{border-width:0px}.hover\:border-primary:hover{--tw-border-opacity:1;border-color:rgb(87 0 0 / var(--tw-border-opacity, 1))}.hover\:bg-primary-container:hover{--tw-bg-opacity:1;background-color:rgb(128 0 0 / var(--tw-bg-opacity, 1))}.hover\:text-primary:hover{--tw-text-opacity:1;color:rgb(87 0 0 / var(--tw-text-opacity, 1))}.active\:opacity-80:active{opacity:0.8}@media (min-width: 768px){.md\:flex{display:flex}.md\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}}@media (min-width: 1024px){.lg\:col-span-5{grid-column:span 5 / span 5}.lg\:col-span-7{grid-column:span 7 / span 7}.lg\:grid-cols-12{grid-template-columns:repeat(12, minmax(0, 1fr))}.lg\:grid-cols-4{grid-template-columns:repeat(4, minmax(0, 1fr))}}</style></head>
+<body class="bg-background text-on-background font-body-lg min-h-[884px]" data-stitch-vh="min-h-[884px]===min-h-screen" data-mode="connect">
+<!-- TopNavBar -->
+<nav class="bg-surface h-20 w-full border-b border-outline-variant flex justify-between items-center px-margin-x max-w-container-max mx-auto">
+<div class="flex items-center space-x-8">
+<span class="font-headline-md text-headline-md font-bold text-primary">ELITE GYM</span>
+<div class="hidden md:flex space-x-6">
+<!-- Overview is Active -->
+<a class="font-label-caps text-label-caps text-primary border-b-2 border-primary pb-1 flex flex-col justify-center h-full" href="#">Overview</a>
+<a class="font-label-caps text-label-caps text-secondary hover:text-primary transition-colors duration-200 flex flex-col justify-center h-full" href="#">Classes</a>
+<a class="font-label-caps text-label-caps text-secondary hover:text-primary transition-colors duration-200 flex flex-col justify-center h-full" href="#">Membership</a>
+<a class="font-label-caps text-label-caps text-secondary hover:text-primary transition-colors duration-200 flex flex-col justify-center h-full" href="#">Settings</a>
+</div>
+</div>
+<div class="flex items-center space-x-4">
+<button class="text-secondary hover:text-primary transition-colors duration-200 scale-95 active:opacity-80 transition-all flex items-center justify-center p-2">
+<span class="material-symbols-outlined" data-icon="notifications"><br></span>
+</button>
+<div class="w-10 h-10 rounded-full border border-outline-variant overflow-hidden">
+<img alt="User profile avatar" class="w-full h-full object-cover" data-alt="A close up, high quality photograph of a professional athletic user avatar in a bright, clean minimalist setting. The user looks focused and healthy. The lighting is soft and even, emphasizing a premium lifestyle aesthetic. The background is pure white." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAufh5-zdRMU-mgEX2MimITANQhlq1NdeTmvxELDtTeZIgF_Oogy-cg7UfCmMOCJnGQwUm96vEwClQttbn1C8yfi0aNad8fygEmvIteowTSk-8f002SV6iaI17Zq_jXj20ER5R_6e7SSDajDjU0_Yl0gvQkE925AeD9NWvcrP8HVkjYEwWiw2fnT-vt6PviG5Ybg3h5eBMxBJvsC-xW6thcNLXMi6qomh1I9a2yh8LuWL6Pv_Pze7c">
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="max-w-container-max mx-auto px-margin-x py-stack-lg">
+<!-- Hero Section -->
+<header class="mb-stack-lg">
+<h1 class="font-display-lg text-display-lg text-on-surface">Welcome back, Alex!</h1>
+<p class="font-body-lg text-body-lg text-secondary mt-2">Here is your daily fitness summary.</p>
+</header>
+<!-- Bento Grid: Stat Cards -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter mb-stack-lg">
+<!-- Card 1 -->
+<div class="bg-surface border border-outline-variant rounded-lg p-stack-md flex flex-col justify-between h-32">
+<span class="font-label-caps text-label-caps text-secondary">Active Plan</span>
+<div class="flex items-end justify-between">
+<span class="font-headline-md text-headline-md text-primary">Elite</span>
+<span class="material-symbols-outlined text-primary text-opacity-50" data-icon="star">star</span>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface border border-outline-variant rounded-lg p-stack-md flex flex-col justify-between h-32">
+<span class="font-label-caps text-label-caps text-secondary">Next Class</span>
+<div class="flex flex-col">
+<span class="font-headline-md text-headline-md text-on-surface">HIIT</span>
+<span class="font-body-md text-body-md text-secondary">2:00 PM</span>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface border border-outline-variant rounded-lg p-stack-md flex flex-col justify-between h-32">
+<span class="font-label-caps text-label-caps text-secondary">Monthly Attendance</span>
+<div class="flex items-end justify-between">
+<span class="font-headline-md text-headline-md text-on-surface">12 <span class="font-body-md text-body-md text-secondary ml-1">days</span></span>
+<span class="material-symbols-outlined text-secondary" data-icon="calendar_today">calendar_today</span>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface border border-outline-variant rounded-lg p-stack-md flex flex-col justify-between h-32">
+<span class="font-label-caps text-label-caps text-secondary">Credits Available</span>
+<div class="flex items-end justify-between">
+<span class="font-headline-md text-headline-md text-on-surface">5</span>
+<span class="material-symbols-outlined text-secondary" data-icon="bolt">bolt</span>
+</div>
+</div>
+</section>
+<!-- Main Layout: 2 Columns -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Left Column: Upcoming Classes (7 columns wide) -->
+<div class="lg:col-span-7 bg-surface border border-outline-variant rounded-lg p-stack-md">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-stack-md">Upcoming Classes</h2>
+<div class="flex flex-col">
+<!-- List Item -->
+<div class="flex items-center justify-between py-stack-sm border-b border-outline-variant border-opacity-50 last:border-0">
+<div class="flex items-center space-x-4">
+<div class="w-12 h-12 bg-surface-container-low rounded flex items-center justify-center flex-shrink-0">
+<span class="font-label-caps text-label-caps text-on-surface text-center leading-tight">OCT<br>15</span>
+</div>
+<div>
+<h3 class="font-body-lg text-body-lg text-on-surface font-semibold">Advanced Crossfit</h3>
+<p class="font-body-md text-body-md text-secondary">08:00 AM • Studio A</p>
+</div>
+</div>
+<button class="bg-primary text-on-primary font-label-caps text-label-caps px-4 py-2 rounded-lg hover:bg-primary-container transition-colors duration-200">
+                            Book
+                        </button>
+</div>
+<!-- List Item -->
+<div class="flex items-center justify-between py-stack-sm border-b border-outline-variant border-opacity-50 last:border-0">
+<div class="flex items-center space-x-4">
+<div class="w-12 h-12 bg-surface-container-low rounded flex items-center justify-center flex-shrink-0">
+<span class="font-label-caps text-label-caps text-on-surface text-center leading-tight">OCT<br>16</span>
+</div>
+<div>
+<h3 class="font-body-lg text-body-lg text-on-surface font-semibold">Yoga Flow</h3>
+<p class="font-body-md text-body-md text-secondary">10:00 AM • Studio B</p>
+</div>
+</div>
+<button class="bg-surface text-primary border border-outline-variant font-label-caps text-label-caps px-4 py-2 rounded-lg hover:border-primary transition-colors duration-200">
+                            Waitlist
+                        </button>
+</div>
+<!-- List Item -->
+<div class="flex items-center justify-between py-stack-sm border-b border-outline-variant border-opacity-50 last:border-0">
+<div class="flex items-center space-x-4">
+<div class="w-12 h-12 bg-surface-container-low rounded flex items-center justify-center flex-shrink-0">
+<span class="font-label-caps text-label-caps text-on-surface text-center leading-tight">OCT<br>18</span>
+</div>
+<div>
+<h3 class="font-body-lg text-body-lg text-on-surface font-semibold">Spin Core</h3>
+<p class="font-body-md text-body-md text-secondary">06:00 PM • Cycling Room</p>
+</div>
+</div>
+<button class="bg-primary text-on-primary font-label-caps text-label-caps px-4 py-2 rounded-lg hover:bg-primary-container transition-colors duration-200">
+                            Book
+                        </button>
+</div>
+</div>
+</div>
+<!-- Right Column: Activity Tracker (5 columns wide) -->
+<div class="lg:col-span-5 bg-surface border border-outline-variant rounded-lg p-stack-md flex flex-col">
+<div class="flex justify-between items-center mb-stack-md">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Activity Tracker</h2>
+<span class="font-label-caps text-label-caps text-secondary">This Week</span>
+</div>
+<!-- Mock Chart Area -->
+<div class="flex-grow chart-grid relative min-h-[200px] mt-4 flex items-end justify-between px-2 pb-1">
+<!-- Bars -->
+<div class="w-1/6 flex flex-col items-center gap-2 z-10">
+<div class="w-8 bg-primary rounded-t-sm h-16"></div>
+<span class="font-label-caps text-label-caps text-secondary text-[10px]">MON</span>
+</div>
+<div class="w-1/6 flex flex-col items-center gap-2 z-10">
+<div class="w-8 bg-primary rounded-t-sm h-32"></div>
+<span class="font-label-caps text-label-caps text-secondary text-[10px]">TUE</span>
+</div>
+<div class="w-1/6 flex flex-col items-center gap-2 z-10">
+<div class="w-8 bg-surface-variant rounded-t-sm h-4"></div>
+<span class="font-label-caps text-label-caps text-secondary text-[10px]">WED</span>
+</div>
+<div class="w-1/6 flex flex-col items-center gap-2 z-10">
+<div class="w-8 bg-primary rounded-t-sm h-24"></div>
+<span class="font-label-caps text-label-caps text-secondary text-[10px]">THU</span>
+</div>
+<div class="w-1/6 flex flex-col items-center gap-2 z-10">
+<div class="w-8 bg-primary rounded-t-sm h-40"></div>
+<span class="font-label-caps text-label-caps text-secondary text-[10px]">FRI</span>
+</div>
+</div>
+<div class="mt-stack-md pt-stack-sm border-t border-outline-variant flex justify-between items-center">
+<span class="font-body-md text-body-md text-secondary">Total Workouts</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">4</span>
+</div>
+</div>
+</section>
+</main>
+</body></html>

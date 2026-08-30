@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Iron Reserve - Retail Invoicing</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error-container": "#ffdad6",
+                    "inverse-on-surface": "#f4f0ef",
+                    "outline-variant": "#e2bfb9",
+                    "surface-variant": "#e6e1e1",
+                    "surface-container-low": "#f7f2f2",
+                    "on-error-container": "#93000a",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-bright": "#fdf8f8",
+                    "on-tertiary-container": "#94a0ff",
+                    "on-primary-fixed-variant": "#8f0f07",
+                    "surface": "#FCF9F8",
+                    "tertiary": "#00137f",
+                    "primary": "#570000",
+                    "tertiary-fixed-dim": "#bcc2ff",
+                    "outline": "#8e706c",
+                    "surface-container": "#F0EDED",
+                    "on-tertiary-fixed-variant": "#2e3c9e",
+                    "surface-tint": "#b22b1d",
+                    "on-background": "#1c1b1b",
+                    "inverse-primary": "#ffb4a8",
+                    "on-tertiary-fixed": "#000c61",
+                    "on-surface-variant": "#5a413d",
+                    "primary-fixed": "#ffdad4",
+                    "on-secondary": "#ffffff",
+                    "success": "#2D5A27",
+                    "surface-container-high": "#ece7e7",
+                    "on-primary-fixed": "#410000",
+                    "surface-container-highest": "#e6e1e1",
+                    "on-tertiary": "#ffffff",
+                    "secondary": "#5d5f5f",
+                    "primary-container": "#800000",
+                    "tertiary-container": "#223094",
+                    "error": "#ba1a1a",
+                    "outline-dim": "#E5E2E1",
+                    "inverse-surface": "#313030",
+                    "secondary-fixed": "#e2e3e2",
+                    "primary-fixed-dim": "#ffb4a8",
+                    "background": "#fdf8f8",
+                    "tertiary-fixed": "#dfe0ff",
+                    "surface-dim": "#ddd9d8",
+                    "secondary-container": "#e2e3e2",
+                    "on-secondary-fixed": "#1a1c1c",
+                    "on-secondary-container": "#636565",
+                    "on-secondary-fixed-variant": "#454747",
+                    "on-primary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "on-primary-container": "#ff8371",
+                    "secondary-fixed-dim": "#c6c7c6",
+                    "on-surface": "#1c1b1b",
+                    "warning": "#B45309"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "margin-x": "32px",
+                    "gutter": "24px",
+                    "stack-lg": "32px",
+                    "container-max": "1440px",
+                    "stack-xs": "4px",
+                    "unit": "4px",
+                    "stack-md": "16px",
+                    "stack-sm": "8px",
+                    "margin-x-mobile": "16px"
+            },
+            "fontFamily": {
+                    "data-mono": [
+                            "Inter"
+                    ],
+                    "headline-md-mobile": [
+                            "Inter"
+                    ],
+                    "display-lg": [
+                            "Inter"
+                    ],
+                    "headline-sm": [
+                            "Inter"
+                    ],
+                    "headline-md": [
+                            "Inter"
+                    ],
+                    "body-lg": [
+                            "Inter"
+                    ],
+                    "body-sm": [
+                            "Inter"
+                    ],
+                    "label-caps": [
+                            "Inter"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ]
+            },
+            "fontSize": {
+                    "data-mono": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "headline-md-mobile": [
+                            "20px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "display-lg": [
+                            "48px",
+                            {
+                                    "lineHeight": "56px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-sm": [
+                            "20px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "letterSpacing": "-0.01em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-lg": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "body-sm": [
+                            "13px",
+                            {
+                                    "lineHeight": "18px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-caps": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.08em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "400"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #fdf8f8; color: #1c1b1b; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .filled-icon {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Custom Scrollbar for minimalist feel */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F0EDED; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ddd9d8; 
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #c6c7c6; 
+        }
+    </style>
+</head>
+<body class="bg-background min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="bg-surface border-b border-outline-dim sticky top-0 z-50 w-full hidden md:block">
+<div class="flex justify-between items-center h-20 px-margin-x w-full max-w-container-max mx-auto">
+<div class="flex items-center gap-gutter">
+<span class="font-headline-md text-headline-md font-bold text-primary">Iron Reserve</span>
+<nav class="flex h-20">
+<a class="flex items-center px-4 font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Membership</a>
+<a class="flex items-center px-4 font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Inventory</a>
+<a class="flex items-center px-4 font-body-md text-body-md text-primary border-b-4 border-primary pb-1" href="#">Invoicing</a>
+<a class="flex items-center px-4 font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Reports</a>
+<a class="flex items-center px-4 font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Packages</a>
+<a class="flex items-center px-4 font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">More</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<input class="pl-10 pr-4 py-2 bg-surface-container-low border border-outline-dim rounded-DEFAULT focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-body-md text-body-md w-64 text-on-surface placeholder-secondary transition-colors" placeholder="Search..." type="text"/>
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary text-lg">search</span>
+</div>
+<div class="flex items-center gap-2">
+<button aria-label="notifications" class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button aria-label="settings" class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<button aria-label="account_circle" class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+<button class="bg-primary text-on-primary font-body-md text-body-md font-medium px-4 py-2 rounded-DEFAULT hover:opacity-90 transition-opacity">
+                    New Member
+                </button>
+</div>
+</div>
+</header>
+<!-- Mobile App Bar -->
+<header class="bg-surface-container border-b border-outline-dim w-full md:hidden">
+<div class="flex items-center justify-between px-margin-x-mobile py-stack-md w-full">
+<button class="text-on-surface-variant p-1">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<span class="font-headline-md-mobile text-headline-md-mobile text-primary font-bold">Invoicing</span>
+<div class="flex gap-2">
+<button class="text-on-surface-variant p-1">
+<span class="material-symbols-outlined">search</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 w-full max-w-container-max mx-auto px-margin-x-mobile md:px-margin-x py-gutter grid grid-cols-1 md:grid-cols-12 gap-gutter h-[calc(100vh-80px)] overflow-hidden">
+<!-- Left Column: Product Catalog (POS) -->
+<section class="md:col-span-8 flex flex-col bg-surface-container-lowest border border-outline-dim rounded-lg h-full overflow-hidden">
+<!-- Catalog Header / Search -->
+<div class="p-stack-md border-b border-outline-dim bg-surface flex flex-col sm:flex-row gap-4 items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Product Catalog</h2>
+<div class="flex gap-2 w-full sm:w-auto">
+<div class="relative flex-1 sm:w-64">
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low border border-outline-dim rounded-DEFAULT focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-body-md text-body-md text-on-surface placeholder-secondary transition-colors" placeholder="Scan barcode or search..." type="text"/>
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary text-lg">barcode_scanner</span>
+</div>
+<button class="p-2 bg-surface-container border border-outline-dim rounded-DEFAULT text-on-surface-variant hover:border-primary hover:text-primary transition-colors">
+<span class="material-symbols-outlined">filter_list</span>
+</button>
+</div>
+</div>
+<!-- Categories Tabs -->
+<div class="flex overflow-x-auto border-b border-outline-dim bg-surface-container-low scrollbar-hide">
+<button class="px-4 py-3 font-label-caps text-label-caps text-primary border-b-2 border-primary whitespace-nowrap">ALL ITEMS</button>
+<button class="px-4 py-3 font-label-caps text-label-caps text-on-surface-variant hover:text-primary whitespace-nowrap transition-colors">SUPPLEMENTS</button>
+<button class="px-4 py-3 font-label-caps text-label-caps text-on-surface-variant hover:text-primary whitespace-nowrap transition-colors">APPAREL</button>
+<button class="px-4 py-3 font-label-caps text-label-caps text-on-surface-variant hover:text-primary whitespace-nowrap transition-colors">BEVERAGES</button>
+<button class="px-4 py-3 font-label-caps text-label-caps text-on-surface-variant hover:text-primary whitespace-nowrap transition-colors">ACCESSORIES</button>
+</div>
+<!-- Product Grid -->
+<div class="p-stack-md overflow-y-auto flex-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 bg-surface-container-lowest">
+<!-- Product Card 1 -->
+<div class="group border border-outline-dim rounded-DEFAULT overflow-hidden hover:border-primary cursor-pointer transition-colors bg-surface">
+<div class="aspect-square bg-surface-container-low relative flex items-center justify-center p-4">
+<img class="object-cover w-full h-full mix-blend-multiply opacity-80 group-hover:opacity-100 transition-opacity" data-alt="A clean, studio-lit photograph of a sleek black protein powder tub with minimalist white branding sitting on a stark white surface. The lighting is crisp, evoking a clinical, high-performance aesthetic. A subtle deep maroon accent line borders the product label. High resolution, stark contrast." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPBm-s_VcbfdaSofL4XpdVk1y_YtXznsGSr_WgLtkaUuEAlWyRLP5Ih-FqR3B6E9wrE_tosUN9zLX_IRDj9JVUtEkGWVa5hmzl0rw2U6OyKP-F-bZ3pYTxGDaMg2hquQ9zuRwRmmMR0skXxqn-C2SO3YXgLKR77nVMOgGZxoyyUY4qCo2qo9kqzzA8PXIKi73d_jr8SgRCwzNxWM4ue4wxHIp4ObiMvJTXd3_2LvMb5hmJG6Sdf8M"/>
+<div class="absolute top-2 right-2 bg-surface border border-outline-dim px-2 py-0.5 rounded font-data-mono text-data-mono text-on-surface">12 in stock</div>
+</div>
+<div class="p-3 border-t border-outline-dim">
+<h3 class="font-body-md text-body-md font-medium text-on-surface truncate">Whey Isolate 5lb</h3>
+<p class="font-data-mono text-data-mono text-primary mt-1">$54.99</p>
+</div>
+</div>
+<!-- Product Card 2 -->
+<div class="group border border-outline-dim rounded-DEFAULT overflow-hidden hover:border-primary cursor-pointer transition-colors bg-surface">
+<div class="aspect-square bg-surface-container-low relative flex items-center justify-center p-4">
+<img class="object-cover w-full h-full mix-blend-multiply opacity-80 group-hover:opacity-100 transition-opacity" data-alt="A highly detailed, flat-lay photograph of a crisp, white premium athletic t-shirt on a sterile light gray background. The shirt features a small, subtle maroon geometric logo on the chest. High-key lighting ensures zero harsh shadows, emphasizing a clean, clinical inventory look." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3Ductr2WGSiF2aR6PxVJhVEeNM4hD4Sb4ly9XQvgM_vEBlJkRCXgSAVTf6ij0XxByCrcQ-9IsnjbRTLBWZOq_W-7Ai3jcmGnsMysj3zWYdE4psxnKVQPsDL_WM_wL3QN767VkGc3F1XGSBW5_okxP1c1fsGf7liYJ7ofU6Rikgnozo5ppYI5Z89QV8jXcgMMSmZej9mVm2QwBt-RwiSU_LHnjv-QX0EtSlS8miaSkcD_FVeKB5Xg"/>
+<div class="absolute top-2 right-2 bg-surface border border-outline-dim px-2 py-0.5 rounded font-data-mono text-data-mono text-on-surface">45 in stock</div>
+</div>
+<div class="p-3 border-t border-outline-dim">
+<h3 class="font-body-md text-body-md font-medium text-on-surface truncate">Performance Tee</h3>
+<p class="font-data-mono text-data-mono text-primary mt-1">$29.00</p>
+</div>
+</div>
+<!-- Product Card 3 -->
+<div class="group border border-outline-dim rounded-DEFAULT overflow-hidden hover:border-primary cursor-pointer transition-colors bg-surface opacity-60">
+<div class="aspect-square bg-surface-container-low relative flex items-center justify-center p-4">
+<div class="absolute inset-0 bg-surface/50 z-10 flex items-center justify-center backdrop-blur-[1px]">
+<span class="bg-surface-tint text-on-primary px-2 py-1 font-label-caps text-label-caps rounded">OUT OF STOCK</span>
+</div>
+<img class="object-cover w-full h-full mix-blend-multiply" data-alt="A minimalist photograph of a clear plastic shaker bottle with a black lid and a small red mixing ball inside. The bottle sits against a bright, featureless white backdrop. The lighting is uniform and bright, suitable for a professional e-commerce product catalog." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqQhVztbUO_cstSxUdaVqOhPPPZJAAVesMOZsL_iurehKPEia6XsaP3K2asbM5EOHD1EeLD8x1k9SjBQGjWC_9Yo8K2y8F-hNz8IaqtXSJEyIAj6d0kMshDoWZjhIu1XE2wNpY1sSIhd4gibekpeIsp-sxbx0Pt7o7F7ht9ypUytwWwNi40P1ppRGN9OlaESlC3lxHuARzfaP0nOOkQxgFsF1fTIQE0VnWWTq2Ocn_rEwB5bOozgY"/>
+</div>
+<div class="p-3 border-t border-outline-dim">
+<h3 class="font-body-md text-body-md font-medium text-on-surface truncate">Shaker Bottle Pro</h3>
+<p class="font-data-mono text-data-mono text-primary mt-1">$12.50</p>
+</div>
+</div>
+<!-- Product Card 4 -->
+<div class="group border border-outline-dim rounded-DEFAULT overflow-hidden hover:border-primary cursor-pointer transition-colors bg-surface">
+<div class="aspect-square bg-surface-container-low relative flex items-center justify-center p-4">
+<img class="object-cover w-full h-full mix-blend-multiply opacity-80 group-hover:opacity-100 transition-opacity" data-alt="A sharp, clear image of an energy drink can with a matte black finish and a bold maroon energy flash design. The can is isolated on a pure white background under bright, shadowless studio lighting. The aesthetic is clean, industrial, and high-performance." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuRGPt21iRAAKbyF59FbtQXJELZFQDU_cp6KvxjwSncyNbUKPavvGs0-b9UyNOmM8yQLRA7OmSp7i1PgwBdmnzSs_Pg_xtecENcE800fjLScEq_cTYC_uep-UEfsHhSDtypWJ3Mpax9x2wcIBhCHqRaTPw4oQjB267oCFgMwFSdv2-YQmKW_S1Pj4owboqmQ2zxp8Svsmiu6_73hJrJb_ipQRxzYr62wef-PNubaOGaBbaAiSZAt8"/>
+<div class="absolute top-2 right-2 bg-surface border border-outline-dim px-2 py-0.5 rounded font-data-mono text-data-mono text-on-surface">120 in stock</div>
+</div>
+<div class="p-3 border-t border-outline-dim">
+<h3 class="font-body-md text-body-md font-medium text-on-surface truncate">Pre-Workout Can</h3>
+<p class="font-data-mono text-data-mono text-primary mt-1">$3.50</p>
+</div>
+</div>
+<!-- Product Card 5 -->
+<div class="group border border-outline-dim rounded-DEFAULT overflow-hidden hover:border-primary cursor-pointer transition-colors bg-surface">
+<div class="aspect-square bg-surface-container-low relative flex items-center justify-center p-4">
+<span class="material-symbols-outlined text-4xl text-outline">fitness_center</span>
+<div class="absolute top-2 right-2 bg-surface border border-outline-dim px-2 py-0.5 rounded font-data-mono text-data-mono text-on-surface">8 in stock</div>
+</div>
+<div class="p-3 border-t border-outline-dim">
+<h3 class="font-body-md text-body-md font-medium text-on-surface truncate">Lifting Belt</h3>
+<p class="font-data-mono text-data-mono text-primary mt-1">$45.00</p>
+</div>
+</div>
+<!-- Product Card 6 -->
+<div class="group border border-outline-dim rounded-DEFAULT overflow-hidden hover:border-primary cursor-pointer transition-colors bg-surface">
+<div class="aspect-square bg-surface-container-low relative flex items-center justify-center p-4">
+<span class="material-symbols-outlined text-4xl text-outline">sports_gymnastics</span>
+<div class="absolute top-2 right-2 bg-surface border border-outline-dim px-2 py-0.5 rounded font-data-mono text-data-mono text-on-surface">15 in stock</div>
+</div>
+<div class="p-3 border-t border-outline-dim">
+<h3 class="font-body-md text-body-md font-medium text-on-surface truncate">Grip Chalk Block</h3>
+<p class="font-data-mono text-data-mono text-primary mt-1">$8.00</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Column: Current Invoice Builder -->
+<aside class="md:col-span-4 flex flex-col bg-surface-container-lowest border border-outline-dim rounded-lg h-full">
+<!-- Invoice Header & Member Lookup -->
+<div class="p-stack-md border-b border-outline-dim bg-surface">
+<div class="flex justify-between items-center mb-4">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Current Invoice</h2>
+<span class="font-data-mono text-data-mono text-secondary">#INV-2023-089</span>
+</div>
+<div class="relative">
+<label class="block font-label-caps text-label-caps text-on-surface-variant mb-1">MEMBER LOOKUP (OPTIONAL)</label>
+<div class="flex gap-2">
+<div class="relative flex-1">
+<input class="w-full pl-8 pr-3 py-2 bg-surface-container-low border border-outline-dim rounded-DEFAULT focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-body-md text-body-md text-on-surface transition-colors" placeholder="Scan ID or enter name..." type="text"/>
+<span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-secondary text-sm">person_search</span>
+</div>
+<button class="bg-surface-container border border-outline-dim px-3 rounded-DEFAULT text-on-surface hover:border-primary transition-colors">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+</div>
+<!-- Active Member Chip (Hidden by default, shown for example) -->
+<div class="mt-3 flex items-center justify-between bg-surface-container-low border border-outline-dim rounded p-2">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-sm">JD</div>
+<div>
+<p class="font-body-sm text-body-sm font-medium text-on-surface leading-tight">John Doe</p>
+<p class="font-label-caps text-label-caps text-secondary leading-tight">Premium Member - 10% OFF</p>
+</div>
+</div>
+<button class="text-secondary hover:text-error transition-colors">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+</div>
+<!-- Itemized List -->
+<div class="flex-1 overflow-y-auto p-stack-md bg-surface-container-lowest">
+<!-- Empty State (Hidden in this view) -->
+<!-- <div class="h-full flex flex-col items-center justify-center text-secondary">
+                    <span class="material-symbols-outlined text-4xl mb-2 opacity-50">shopping_cart</span>
+                    <p class="font-body-md text-body-md">Scan or select items to begin</p>
+                </div> -->
+<!-- Line Item 1 -->
+<div class="flex justify-between items-start py-3 border-b border-outline-dim last:border-0 group">
+<div class="flex-1">
+<h4 class="font-body-md text-body-md font-medium text-on-surface">Whey Isolate 5lb</h4>
+<div class="flex items-center gap-3 mt-1">
+<p class="font-data-mono text-data-mono text-secondary">$54.99</p>
+<div class="flex items-center border border-outline-dim rounded bg-surface">
+<button class="px-2 py-0.5 text-secondary hover:bg-surface-container-high transition-colors">-</button>
+<span class="px-2 font-data-mono text-data-mono text-on-surface border-x border-outline-dim">1</span>
+<button class="px-2 py-0.5 text-secondary hover:bg-surface-container-high transition-colors">+</button>
+</div>
+</div>
+</div>
+<div class="text-right ml-4 flex flex-col items-end">
+<p class="font-data-mono text-data-mono text-on-surface font-semibold">$54.99</p>
+<button class="mt-1 text-secondary opacity-0 group-hover:opacity-100 hover:text-error transition-all">
+<span class="material-symbols-outlined text-sm">delete</span>
+</button>
+</div>
+</div>
+<!-- Line Item 2 -->
+<div class="flex justify-between items-start py-3 border-b border-outline-dim last:border-0 group">
+<div class="flex-1">
+<h4 class="font-body-md text-body-md font-medium text-on-surface">Pre-Workout Can</h4>
+<div class="flex items-center gap-3 mt-1">
+<p class="font-data-mono text-data-mono text-secondary">$3.50</p>
+<div class="flex items-center border border-outline-dim rounded bg-surface">
+<button class="px-2 py-0.5 text-secondary hover:bg-surface-container-high transition-colors">-</button>
+<span class="px-2 font-data-mono text-data-mono text-on-surface border-x border-outline-dim">2</span>
+<button class="px-2 py-0.5 text-secondary hover:bg-surface-container-high transition-colors">+</button>
+</div>
+</div>
+</div>
+<div class="text-right ml-4 flex flex-col items-end">
+<p class="font-data-mono text-data-mono text-on-surface font-semibold">$7.00</p>
+<button class="mt-1 text-secondary opacity-0 group-hover:opacity-100 hover:text-error transition-all">
+<span class="material-symbols-outlined text-sm">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Totals & Payment Section -->
+<div class="border-t border-outline-dim bg-surface p-stack-md">
+<!-- Calculations -->
+<div class="space-y-2 mb-4">
+<div class="flex justify-between font-body-sm text-body-sm text-on-surface-variant">
+<span>Subtotal</span>
+<span class="font-data-mono text-data-mono">$61.99</span>
+</div>
+<div class="flex justify-between font-body-sm text-body-sm text-success">
+<span>Member Discount (10%)</span>
+<span class="font-data-mono text-data-mono">-$6.20</span>
+</div>
+<div class="flex justify-between font-body-sm text-body-sm text-on-surface-variant">
+<span>Tax (8.5%)</span>
+<span class="font-data-mono text-data-mono">$4.74</span>
+</div>
+<div class="flex justify-between font-headline-sm text-headline-sm text-on-surface pt-2 border-t border-outline-dim mt-2">
+<span>Total</span>
+<span class="font-data-mono text-data-mono text-primary font-bold">$60.53</span>
+</div>
+</div>
+<!-- Payment Methods -->
+<div class="mb-6">
+<label class="block font-label-caps text-label-caps text-on-surface-variant mb-2">PAYMENT METHOD</label>
+<div class="grid grid-cols-3 gap-2">
+<button class="flex flex-col items-center justify-center py-2 border border-outline-dim rounded bg-surface hover:border-primary hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant mb-1">payments</span>
+<span class="font-label-caps text-label-caps text-on-surface">CASH</span>
+</button>
+<button class="flex flex-col items-center justify-center py-2 border-2 border-primary rounded bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-primary mb-1">credit_card</span>
+<span class="font-label-caps text-label-caps text-primary font-bold">CARD</span>
+</button>
+<button class="flex flex-col items-center justify-center py-2 border border-outline-dim rounded bg-surface hover:border-primary hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant mb-1">contactless</span>
+<span class="font-label-caps text-label-caps text-on-surface">DIGITAL</span>
+</button>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex gap-3">
+<button class="flex-1 py-3 border border-primary text-primary font-body-md text-body-md font-medium rounded hover:bg-surface-container-low transition-colors flex justify-center items-center gap-2">
+<span class="material-symbols-outlined text-sm">print</span>
+                        Print Invoice
+                    </button>
+<button class="flex-1 py-3 bg-primary text-on-primary font-body-md text-body-md font-medium rounded hover:opacity-90 transition-opacity shadow-sm">
+                        Finalize Sale
+                    </button>
+</div>
+</div>
+</aside>
+</main>
+</body></html>

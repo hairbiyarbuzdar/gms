@@ -1,0 +1,516 @@
+// Iron Reserve - multi-tenant gym management platform.
+// Milestones 1-2: the platform control plane. Tenant-scoped models for the
+// per-location system (Milestone 3) attach to Tenant and are added later.
+//
+// Multi-tenancy strategy: shared database, shared schema. Every tenant-scoped
+// row carries a tenantId, and isolation is enforced in the application's data
+// access layer. See plan.md section 3.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// One gym location and its self-contained management system.
+/// Created only by a superadmin (FR-2, FR-7).
+model Tenant {
+  id     String       @id @default(cuid())
+  name   String
+  /// Free-text location in v1; may become structured later.
+  location String
+  /// URL-safe identifier derived from name. Used for tenant routing.
+  slug   String       @unique
+  status TenantStatus @default(ACTIVE)
+
+  /// The superadmin who provisioned this tenant.
+  createdById String
+  createdBy   User   @relation("TenantCreatedBy", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// The tenant's login accounts. Exactly one in v1 (FR-54).
+  users User[] @relation("TenantUsers")
+
+  // Milestone 3: the location's own management system.
+  packages         Package[]
+  members          Member[]
+  memberships      Membership[]
+  renewalPayments  RenewalPayment[]
+  products         Product[]
+  stockMovements   StockMovement[]
+  retailInvoices   RetailInvoice[]
+  suppliers        Supplier[]
+  purchaseInvoices PurchaseInvoice[]
+  purchasePayments PurchasePayment[]
+  expenses         Expense[]
+  expenseCategories ExpenseCategory[]
+  paymentMethods   PaymentMethod[]
+  paymentTransfers PaymentTransfer[]
+
+  @@index([status])
+  @@index([createdById])
+}
+
+/// Platform users (superadmin, admin) and tenant login accounts.
+/// tenantId is null for platform users and set for a tenant account.
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String
+  name         String
+  role         Role
+  status       UserStatus @default(ACTIVE)
+
+  /// Null for SUPERADMIN and ADMIN; required for TENANT accounts.
+  tenantId String?
+  tenant   Tenant? @relation("TenantUsers", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  /// Tenants this user provisioned. Populated for superadmins only.
+  createdTenants Tenant[] @relation("TenantCreatedBy")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([role])
+}
+
+/// Append-only record of platform-level mutations.
+model AuditLog {
+  id      String @id @default(cuid())
+  actorId String
+  action  String
+  /// The affected entity, e.g. "Tenant:abc123".
+  target  String
+  meta    Json?
+  /// Null for platform-level actions.
+  tenantId  String?
+  createdAt DateTime @default(now())
+
+  @@index([actorId])
+  @@index([tenantId])
+  @@index([createdAt])
+}
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  /// The single login account for one gym location (FR-4, FR-54).
+  TENANT
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+// ---------------------------------------------------------------------------
+// Milestone 3 - the per-location management system.
+//
+// Every model below is tenant-scoped: it carries tenantId, and every query
+// must filter on it (see src/lib/tenant-db.ts). Money is Decimal(12,2), never
+// Float. There is no cost price anywhere - products carry a sale price only,
+// and purchase invoices never write back to a product (decision D-8).
+// ---------------------------------------------------------------------------
+
+/// A membership plan offered by the location (FR-14).
+model Package {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name String
+  /// Length in months. Renewals are monthly regardless (FR-16).
+  durationMonths Int     @default(1)
+  price          Decimal @db.Decimal(12, 2)
+  isActive       Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships Membership[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, isActive])
+}
+
+/// A gym customer. Never a login user.
+/// Exactly one membership per member - 1:1 (FR-15, decision D-5).
+model Member {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name    String
+  phone   String
+  email   String?
+  photoUrl String?
+  joinDate DateTime @default(now())
+
+  /// Generated at creation. Used for renewal lookup only - not attendance
+  /// (FR-20, FR-21, decision D-6).
+  barcode String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  membership     Membership?
+  retailInvoices RetailInvoice[]
+
+  @@unique([tenantId, barcode])
+  @@index([tenantId, name])
+  @@index([tenantId, phone])
+}
+
+/// A member's enrolment, renewed monthly (FR-16, FR-19).
+model Membership {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  memberId String @unique
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  packageId String
+  package   Package @relation(fields: [packageId], references: [id])
+
+  startDate DateTime @default(now())
+  /// Advances to (renewal recorded date + 1 month) on each renewal, so a late
+  /// payment pushes the schedule forward (decision D-7).
+  nextRenewalDate DateTime
+  status          MembershipStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  renewalPayments RenewalPayment[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, nextRenewalDate])
+}
+
+/// Money taken for one monthly renewal (FR-18).
+model RenewalPayment {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  membershipId String
+  membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  amount Decimal @db.Decimal(12, 2)
+
+  paymentMethodId String
+  paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+
+  /// The date the renewal was recorded; drives the next due date.
+  recordedAt DateTime @default(now())
+  /// The due date this payment covered, kept for reporting.
+  periodStart DateTime
+  periodEnd   DateTime
+
+  @@index([tenantId, recordedAt])
+  @@index([membershipId])
+}
+
+/// A retail product sold at the front desk (FR-24). No cost price.
+model Product {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  /// Sequential per tenant, starting at 1. Assigned on creation; the SKU
+  /// beside it stays a free-text field the tenant types themselves.
+  serial   Int
+  name     String
+  sku      String?
+  category String?
+  /// The only price a product carries (decision D-8).
+  salePrice    Decimal @db.Decimal(12, 2)
+  quantity     Int     @default(0)
+  reorderLevel Int     @default(0)
+  isActive     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stockMovements       StockMovement[]
+  retailInvoiceLines   RetailInvoiceLine[]
+  purchaseInvoiceLines PurchaseInvoiceLine[]
+
+  @@unique([tenantId, sku])
+  @@unique([tenantId, serial])
+  @@index([tenantId, name])
+  @@index([tenantId, isActive])
+}
+
+/// Every change to stock, always tied to a document (FR-26).
+model StockMovement {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  /// Positive for receipts, negative for sales.
+  quantityDelta Int
+  type          StockMovementType
+  /// The document that caused it, e.g. "RetailInvoice:abc".
+  reference String?
+  reason    String?
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([productId])
+}
+
+/// A point-of-sale retail sale (FR-29). No tax (decision D-9).
+model RetailInvoice {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  /// Human-facing number, unique per tenant.
+  number String
+
+  /// Optional link to a member for purchase history (FR-32).
+  memberId String?
+  member   Member? @relation(fields: [memberId], references: [id])
+
+  subtotal Decimal @db.Decimal(12, 2)
+  discount Decimal @default(0) @db.Decimal(12, 2)
+  total    Decimal @db.Decimal(12, 2)
+
+  paymentMethodId String
+  paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+
+  soldAt DateTime @default(now())
+
+  lines RetailInvoiceLine[]
+
+  @@unique([tenantId, number])
+  @@index([tenantId, soldAt])
+}
+
+model RetailInvoiceLine {
+  id       String @id @default(cuid())
+  tenantId String
+
+  invoiceId String
+  invoice   RetailInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  /// Snapshot of the sale price at the time of sale.
+  unitPrice Decimal @db.Decimal(12, 2)
+  quantity  Int
+  lineTotal Decimal @db.Decimal(12, 2)
+
+  @@index([invoiceId])
+  @@index([tenantId])
+}
+
+/// A supplier of retail stock (FR-33).
+model Supplier {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name    String
+  phone   String?
+  email   String?
+  address String?
+  notes   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purchaseInvoices PurchaseInvoice[]
+
+  @@index([tenantId, name])
+}
+
+/// Stock received from a supplier (FR-34). Increases quantity only - it never
+/// updates a product's price (FR-35, decision D-8).
+model PurchaseInvoice {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+
+  /// The supplier's own invoice reference.
+  reference String?
+  total     Decimal  @db.Decimal(12, 2)
+  status    PurchaseStatus @default(UNPAID)
+
+  invoiceDate DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  lines    PurchaseInvoiceLine[]
+  payments PurchasePayment[]
+
+  @@index([tenantId, invoiceDate])
+  @@index([supplierId])
+}
+
+model PurchaseInvoiceLine {
+  id       String @id @default(cuid())
+  tenantId String
+
+  purchaseInvoiceId String
+  purchaseInvoice   PurchaseInvoice @relation(fields: [purchaseInvoiceId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  quantity Int
+  /// What the supplier charged for this line. Never written back to Product.
+  lineAmount Decimal @db.Decimal(12, 2)
+
+  @@index([purchaseInvoiceId])
+  @@index([tenantId])
+}
+
+/// A payment made against a purchase invoice (FR-36).
+model PurchasePayment {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  purchaseInvoiceId String
+  purchaseInvoice   PurchaseInvoice @relation(fields: [purchaseInvoiceId], references: [id], onDelete: Cascade)
+
+  amount Decimal @db.Decimal(12, 2)
+
+  paymentMethodId String
+  paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+
+  paidAt DateTime @default(now())
+
+  @@index([tenantId, paidAt])
+  @@index([purchaseInvoiceId])
+}
+
+/// Operating cost categories, configurable per tenant (FR-38).
+model ExpenseCategory {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name     String
+  isActive Boolean @default(true)
+
+  expenses Expense[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, isActive])
+}
+
+/// An operating cost (FR-37).
+model Expense {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  categoryId String
+  category   ExpenseCategory @relation(fields: [categoryId], references: [id])
+
+  amount      Decimal @db.Decimal(12, 2)
+  description String?
+  attachmentUrl String?
+
+  paymentMethodId String
+  paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+
+  spentAt   DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, spentAt])
+  @@index([categoryId])
+}
+
+/// How money is taken or paid out (FR-40). Every money movement references
+/// one, which is what makes the cash report possible (FR-41, FR-48).
+model PaymentMethod {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name     String
+  /// Balance the channel started with. Every current balance is derived from
+  /// this plus the money movements recorded against the method.
+  openingBalance Decimal @default(0) @db.Decimal(12, 2)
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  renewalPayments  RenewalPayment[]
+  retailInvoices   RetailInvoice[]
+  purchasePayments PurchasePayment[]
+  expenses         Expense[]
+
+  transfersOut PaymentTransfer[] @relation("TransferFrom")
+  transfersIn  PaymentTransfer[] @relation("TransferTo")
+
+  @@unique([tenantId, name])
+  @@index([tenantId, isActive])
+}
+
+/// Money moved between two of the tenant's own payment channels - a cash
+/// deposit into a bank account, say. Never income or expense: it leaves one
+/// balance and lands in another, so platform totals are unchanged.
+model PaymentTransfer {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  fromMethodId String
+  fromMethod   PaymentMethod @relation("TransferFrom", fields: [fromMethodId], references: [id])
+
+  toMethodId String
+  toMethod   PaymentMethod @relation("TransferTo", fields: [toMethodId], references: [id])
+
+  amount Decimal @db.Decimal(12, 2)
+  note   String?
+
+  transferredAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  @@index([tenantId, transferredAt])
+  @@index([fromMethodId])
+  @@index([toMethodId])
+}
+
+enum MembershipStatus {
+  ACTIVE
+  DUE
+  EXPIRED
+  CANCELLED
+}
+
+enum StockMovementType {
+  PURCHASE
+  SALE
+  ADJUSTMENT
+}
+
+enum PurchaseStatus {
+  UNPAID
+  PARTIAL
+  PAID
+}

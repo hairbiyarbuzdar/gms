@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Iron Reserve - Member Search</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "error-container": "#ffdad6",
+                      "inverse-on-surface": "#f4f0ef",
+                      "outline-variant": "#e2bfb9",
+                      "surface-variant": "#e6e1e1",
+                      "surface-container-low": "#f7f2f2",
+                      "on-error-container": "#93000a",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-bright": "#fdf8f8",
+                      "on-tertiary-container": "#94a0ff",
+                      "on-primary-fixed-variant": "#8f0f07",
+                      "surface": "#FCF9F8",
+                      "tertiary": "#00137f",
+                      "primary": "#570000",
+                      "tertiary-fixed-dim": "#bcc2ff",
+                      "outline": "#8e706c",
+                      "surface-container": "#F0EDED",
+                      "on-tertiary-fixed-variant": "#2e3c9e",
+                      "surface-tint": "#b22b1d",
+                      "on-background": "#1c1b1b",
+                      "inverse-primary": "#ffb4a8",
+                      "on-tertiary-fixed": "#000c61",
+                      "on-surface-variant": "#5a413d",
+                      "primary-fixed": "#ffdad4",
+                      "on-secondary": "#ffffff",
+                      "success": "#2D5A27",
+                      "surface-container-high": "#ece7e7",
+                      "on-primary-fixed": "#410000",
+                      "surface-container-highest": "#e6e1e1",
+                      "on-tertiary": "#ffffff",
+                      "secondary": "#5d5f5f",
+                      "primary-container": "#800000",
+                      "tertiary-container": "#223094",
+                      "error": "#ba1a1a",
+                      "outline-dim": "#E5E2E1",
+                      "inverse-surface": "#313030",
+                      "secondary-fixed": "#e2e3e2",
+                      "primary-fixed-dim": "#ffb4a8",
+                      "background": "#fdf8f8",
+                      "tertiary-fixed": "#dfe0ff",
+                      "surface-dim": "#ddd9d8",
+                      "secondary-container": "#e2e3e2",
+                      "on-secondary-fixed": "#1a1c1c",
+                      "on-secondary-container": "#636565",
+                      "on-secondary-fixed-variant": "#454747",
+                      "on-primary": "#ffffff",
+                      "on-error": "#ffffff",
+                      "on-primary-container": "#ff8371",
+                      "secondary-fixed-dim": "#c6c7c6",
+                      "on-surface": "#1c1b1b",
+                      "warning": "#B45309"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "margin-x": "32px",
+                      "gutter": "24px",
+                      "stack-lg": "32px",
+                      "container-max": "1440px",
+                      "stack-xs": "4px",
+                      "unit": "4px",
+                      "stack-md": "16px",
+                      "stack-sm": "8px",
+                      "margin-x-mobile": "16px"
+              },
+              "fontFamily": {
+                      "data-mono": [
+                              "Inter"
+                      ],
+                      "headline-md-mobile": [
+                              "Inter"
+                      ],
+                      "display-lg": [
+                              "Inter"
+                      ],
+                      "headline-sm": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "label-caps": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "data-mono": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-md-mobile": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-sm": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-caps": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.08em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md antialiased min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="bg-surface dark:bg-surface font-body-md text-body-md w-full max-w-container-max mx-auto border-b border-outline-dim dark:border-outline">
+<div class="flex justify-between items-center h-20 px-margin-x w-full">
+<div class="flex items-center gap-8">
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">
+                    Iron Reserve
+                </div>
+<div class="hidden md:flex gap-6 h-full items-center">
+<a class="text-primary dark:text-primary-fixed-dim border-b-4 border-primary dark:border-primary-fixed-dim pb-1 h-full flex items-center mt-1" href="#">Membership</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 h-full flex items-center" href="#">Inventory</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 h-full flex items-center" href="#">Invoicing</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 h-full flex items-center" href="#">Reports</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 h-full flex items-center" href="#">Packages</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 h-full flex items-center" href="#">More</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-primary text-on-primary font-body-md text-body-md px-4 py-2 rounded flex items-center gap-2 hover:bg-primary-container transition-colors duration-200">
+<span class="material-symbols-outlined text-[18px]" data-icon="add">add</span>
+                    New Member
+                </button>
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-200 p-2">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-200 p-2">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-200 p-2">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="flex-grow w-full max-w-container-max mx-auto px-margin-x py-stack-lg flex flex-col md:flex-row gap-gutter">
+<!-- Sidebar Filters -->
+<aside class="w-full md:w-3/12 flex flex-col gap-stack-lg">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-primary mb-stack-md">Directory Filters</h2>
+<div class="flex flex-col gap-stack-md">
+<!-- Status -->
+<div class="border border-outline-dim p-4 rounded-DEFAULT bg-surface-container-lowest">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant mb-3 uppercase tracking-wider">Status</h3>
+<div class="flex flex-col gap-2">
+<label class="flex items-center gap-2 cursor-pointer group">
+<input checked="" class="form-checkbox text-primary border-outline-dim rounded-sm focus:ring-primary focus:border-primary group-hover:border-primary transition-colors" type="checkbox"/>
+<span class="font-body-md text-body-md text-on-surface">Active</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer group">
+<input class="form-checkbox text-primary border-outline-dim rounded-sm focus:ring-primary focus:border-primary group-hover:border-primary transition-colors" type="checkbox"/>
+<span class="font-body-md text-body-md text-on-surface">Inactive</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer group">
+<input class="form-checkbox text-primary border-outline-dim rounded-sm focus:ring-primary focus:border-primary group-hover:border-primary transition-colors" type="checkbox"/>
+<span class="font-body-md text-body-md text-on-surface">Suspended</span>
+</label>
+</div>
+</div>
+<!-- Membership Tier -->
+<div class="border border-outline-dim p-4 rounded-DEFAULT bg-surface-container-lowest">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant mb-3 uppercase tracking-wider">Tier</h3>
+<div class="flex flex-col gap-2">
+<label class="flex items-center gap-2 cursor-pointer group">
+<input checked="" class="form-checkbox text-primary border-outline-dim rounded-sm focus:ring-primary focus:border-primary group-hover:border-primary transition-colors" type="checkbox"/>
+<span class="font-body-md text-body-md text-on-surface">Platinum</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer group">
+<input checked="" class="form-checkbox text-primary border-outline-dim rounded-sm focus:ring-primary focus:border-primary group-hover:border-primary transition-colors" type="checkbox"/>
+<span class="font-body-md text-body-md text-on-surface">Gold</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer group">
+<input class="form-checkbox text-primary border-outline-dim rounded-sm focus:ring-primary focus:border-primary group-hover:border-primary transition-colors" type="checkbox"/>
+<span class="font-body-md text-body-md text-on-surface">Silver</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer group">
+<input class="form-checkbox text-primary border-outline-dim rounded-sm focus:ring-primary focus:border-primary group-hover:border-primary transition-colors" type="checkbox"/>
+<span class="font-body-md text-body-md text-on-surface">Corporate</span>
+</label>
+</div>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<section class="w-full md:w-9/12 flex flex-col gap-stack-lg">
+<!-- Search Interface -->
+<div class="bg-surface-container-lowest border border-outline-dim rounded-DEFAULT p-stack-lg">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-4 top-1/2 transform -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+<input class="w-full pl-12 pr-4 py-4 font-body-lg text-body-lg text-on-surface bg-surface border border-outline-dim rounded-DEFAULT focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder:text-on-surface-variant" placeholder="Search members by name, ID, or company..." type="text"/>
+<button class="absolute right-3 top-1/2 transform -translate-y-1/2 bg-surface-container text-on-surface-variant font-label-caps text-label-caps px-3 py-1.5 rounded-sm hover:bg-outline-dim transition-colors border border-outline-dim flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]" data-icon="tune">tune</span>
+                        ADVANCED
+                    </button>
+</div>
+<div class="flex items-center justify-between mt-stack-md">
+<div class="font-body-sm text-body-sm text-on-surface-variant">
+                        Showing <span class="font-data-mono text-data-mono text-on-surface">1-12</span> of <span class="font-data-mono text-data-mono text-on-surface">1,248</span> members
+                    </div>
+<div class="flex gap-2">
+<button class="p-1.5 border border-primary text-primary rounded-sm bg-primary/10">
+<span class="material-symbols-outlined text-[20px]" data-icon="grid_view">grid_view</span>
+</button>
+<button class="p-1.5 border border-outline-dim text-on-surface-variant rounded-sm hover:border-primary hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="list">list</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Results Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+<!-- Member Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-dim rounded-DEFAULT p-stack-md hover:border-primary transition-colors group cursor-pointer relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary transform origin-left scale-y-0 group-hover:scale-y-100 transition-transform duration-300"></div>
+<div class="flex items-start justify-between mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-DEFAULT bg-surface-container flex items-center justify-center border border-outline-dim overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Professional portrait photograph of a confident male executive in a minimalist studio setting, high-key lighting, bright white and pristine minimalist style, sharp focus, high-end professional management aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBP1GPRkL1tL3aY_IxhHwijzQ9_eTrEJIYHjOpaswew3AY83YQfjYXSQZW_wK8G3o3DxnduLQqfZ0G-BzNns4aFC4rPjSbQX1ixL7tX7pXM1h-UQPRCQ9itDDk0KY-MHI5umXVaPVc2zxrijyjdaB7DtYa-irfZqJ-KkvjioPRFNhKBs5RIR8gNdpiVMWm_jUAIGQpCZcQ_NgepPj6V3oV9dygM275S_NcwzxQCFdYmlpeKAkSI4AI"/>
+</div>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface leading-tight">Arthur Pendelton</h4>
+<div class="font-data-mono text-data-mono text-on-surface-variant text-[12px]">ID: IR-8842</div>
+</div>
+</div>
+<span class="bg-surface-container-low text-primary font-label-caps text-label-caps px-2 py-0.5 rounded-sm border border-outline-dim">PLATINUM</span>
+</div>
+<div class="flex flex-col gap-2 mb-4">
+<div class="flex justify-between items-center">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Joined</span>
+<span class="font-data-mono text-data-mono text-on-surface">Oct 2021</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Status</span>
+<span class="font-body-sm text-body-sm text-success flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-success"></span> Active
+                            </span>
+</div>
+</div>
+<div class="flex gap-2 mt-auto pt-4 border-t border-outline-dim">
+<button class="flex-1 font-label-caps text-label-caps text-primary border border-primary py-1.5 rounded-sm hover:bg-primary hover:text-on-primary transition-colors text-center">PROFILE</button>
+<button class="flex-1 font-label-caps text-label-caps text-on-surface-variant border border-outline-dim py-1.5 rounded-sm hover:border-primary hover:text-primary transition-colors text-center">HISTORY</button>
+</div>
+</div>
+<!-- Member Card 2 -->
+<div class="bg-surface-container-lowest border border-outline-dim rounded-DEFAULT p-stack-md hover:border-primary transition-colors group cursor-pointer relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary transform origin-left scale-y-0 group-hover:scale-y-100 transition-transform duration-300"></div>
+<div class="flex items-start justify-between mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-DEFAULT bg-surface-container flex items-center justify-center border border-outline-dim overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Professional portrait photograph of an elegant female executive in a modern bright office space, white clinical lighting, sophisticated clean-room aesthetic, crisp details, professional management styling." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBz8xCMUq-h_Gt0tI86iygdCZyWTxlyERiII_uRzQC9AsiEbEvvXjaoIeczHzonm7drOjVOSYwBCdmdQZE4yLr3Wt22o2OMMSkaEYOq9HmiMKF3zdDk3e-O5JVm1ruiIZ0k8DP4kebINN_1Exn8rj6DWPw5wGE6M8Nfx3TjuS-mNhn9sULCTLw_c4mT8_pxEcPvQgRDiRmWiMi-NhWIdTIgoo9vyES9pS5HPy6IwG2FJkk5EgveITo"/>
+</div>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface leading-tight">Sarah Jenkins</h4>
+<div class="font-data-mono text-data-mono text-on-surface-variant text-[12px]">ID: IR-9102</div>
+</div>
+</div>
+<span class="bg-surface-container-low text-primary font-label-caps text-label-caps px-2 py-0.5 rounded-sm border border-outline-dim">GOLD</span>
+</div>
+<div class="flex flex-col gap-2 mb-4">
+<div class="flex justify-between items-center">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Joined</span>
+<span class="font-data-mono text-data-mono text-on-surface">Jan 2022</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Status</span>
+<span class="font-body-sm text-body-sm text-success flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-success"></span> Active
+                            </span>
+</div>
+</div>
+<div class="flex gap-2 mt-auto pt-4 border-t border-outline-dim">
+<button class="flex-1 font-label-caps text-label-caps text-primary border border-primary py-1.5 rounded-sm hover:bg-primary hover:text-on-primary transition-colors text-center">PROFILE</button>
+<button class="flex-1 font-label-caps text-label-caps text-on-surface-variant border border-outline-dim py-1.5 rounded-sm hover:border-primary hover:text-primary transition-colors text-center">HISTORY</button>
+</div>
+</div>
+<!-- Member Card 3 -->
+<div class="bg-surface-container-lowest border border-outline-dim rounded-DEFAULT p-stack-md hover:border-primary transition-colors group cursor-pointer relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary transform origin-left scale-y-0 group-hover:scale-y-100 transition-transform duration-300"></div>
+<div class="flex items-start justify-between mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-DEFAULT bg-surface-container flex items-center justify-center border border-outline-dim overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Professional corporate headshot of a serious male director in a highly structured, minimalist environment. Bright ambient light, absolute clarity, no decorative distractions, premium utility visual style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOItcB4daljauajKeBFC5UnXxoAdNxX1P-MdvgdN949YZv-AbeTp7z9PPdkJvbCMLP2-emva_DdtLD50LwH6N7LJk7fD0fQvqnk5QP5UPWr-j201AJqTVo5g9HueyUvWWXcUMZOkowkOnMO6CKEzEKM32o2Sof-Y-rHqQNGiUTZQMBlhywcSxQ67IxS2ULiL_41-jSM3VSEN-wJj3vt14pEvfWvKZ0j_oMRkzrThfGnSCkso8iOAY"/>
+</div>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface leading-tight">Marcus Thorne</h4>
+<div class="font-data-mono text-data-mono text-on-surface-variant text-[12px]">ID: IR-7721</div>
+</div>
+</div>
+<span class="bg-surface-container-low text-primary font-label-caps text-label-caps px-2 py-0.5 rounded-sm border border-outline-dim">PLATINUM</span>
+</div>
+<div class="flex flex-col gap-2 mb-4">
+<div class="flex justify-between items-center">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Joined</span>
+<span class="font-data-mono text-data-mono text-on-surface">Mar 2020</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Status</span>
+<span class="font-body-sm text-body-sm text-error flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span> Inactive
+                            </span>
+</div>
+</div>
+<div class="flex gap-2 mt-auto pt-4 border-t border-outline-dim">
+<button class="flex-1 font-label-caps text-label-caps text-primary border border-primary py-1.5 rounded-sm hover:bg-primary hover:text-on-primary transition-colors text-center">PROFILE</button>
+<button class="flex-1 font-label-caps text-label-caps text-on-surface-variant border border-outline-dim py-1.5 rounded-sm hover:border-primary hover:text-primary transition-colors text-center">HISTORY</button>
+</div>
+</div>
+</div>
+<!-- Pagination -->
+<div class="flex justify-between items-center pt-stack-md border-t border-outline-dim">
+<button class="px-4 py-2 border border-outline-dim rounded-sm font-label-caps text-label-caps text-on-surface-variant hover:border-primary hover:text-primary transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+<span class="material-symbols-outlined text-[16px]" data-icon="chevron_left">chevron_left</span> PREV
+                </button>
+<div class="flex gap-2">
+<button class="w-8 h-8 flex items-center justify-center font-data-mono text-data-mono bg-primary text-on-primary rounded-sm">1</button>
+<button class="w-8 h-8 flex items-center justify-center font-data-mono text-data-mono text-on-surface-variant hover:bg-surface-container transition-colors rounded-sm">2</button>
+<button class="w-8 h-8 flex items-center justify-center font-data-mono text-data-mono text-on-surface-variant hover:bg-surface-container transition-colors rounded-sm">3</button>
+<span class="w-8 h-8 flex items-center justify-center text-on-surface-variant">...</span>
+<button class="w-8 h-8 flex items-center justify-center font-data-mono text-data-mono text-on-surface-variant hover:bg-surface-container transition-colors rounded-sm">104</button>
+</div>
+<button class="px-4 py-2 border border-outline-dim rounded-sm font-label-caps text-label-caps text-on-surface-variant hover:border-primary hover:text-primary transition-colors flex items-center gap-2">
+                    NEXT <span class="material-symbols-outlined text-[16px]" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</section>
+</main>
+</body></html>
