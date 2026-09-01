@@ -19,39 +19,64 @@ export function PhotoCapture({
   onChange: (dataUrl: string | null) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const [live, setLive] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const live = stream !== null && !value;
+
   const stop = useCallback(() => {
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    streamRef.current = null;
-    setLive(false);
+    setStream((current) => {
+      current?.getTracks().forEach((t) => t.stop());
+      return null;
+    });
   }, []);
 
+  // Stop the camera when the component unmounts.
   useEffect(() => stop, [stop]);
+
+  /*
+   * Attach the stream once the <video> is actually in the DOM. Doing this
+   * inside start() fails: setStream triggers the render that mounts the
+   * <video>, so videoRef.current is still null at that point.
+   */
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !stream) return;
+
+    video.srcObject = stream;
+    video.play().catch(() => {
+      // Autoplay can be blocked until a user gesture; the click that opened
+      // the camera usually satisfies it, but ignore if not.
+    });
+
+    return () => {
+      video.srcObject = null;
+    };
+  }, [stream, live]);
 
   async function start() {
     setError(null);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
+      const media = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 640 } },
         audio: false,
       });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-      setLive(true);
-    } catch {
-      setError("Could not open the camera. Check the browser has permission.");
+      setStream(media);
+    } catch (err) {
+      const name = err instanceof DOMException ? err.name : "";
+      setError(
+        name === "NotAllowedError"
+          ? "Camera permission was denied. Allow it in the browser and try again."
+          : name === "NotFoundError"
+            ? "No camera was found on this device."
+            : "Could not open the camera."
+      );
     }
   }
 
   function capture() {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !video.videoWidth) return;
 
     // Square crop from the centre of the frame.
     const side = Math.min(video.videoWidth, video.videoHeight);
@@ -89,7 +114,13 @@ export function PhotoCapture({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={value} alt="Captured headshot" className="size-full object-cover" />
           ) : live ? (
-            <video ref={videoRef} playsInline muted className="size-full object-cover" />
+            <video
+              ref={videoRef}
+              playsInline
+              muted
+              autoPlay
+              className="size-full object-cover"
+            />
           ) : (
             <div className="flex size-full items-center justify-center">
               <Camera className="size-8 text-muted-foreground/50" aria-hidden="true" />
