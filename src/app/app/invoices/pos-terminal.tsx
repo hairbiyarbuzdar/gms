@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { formatMoney, formatMoneyPrecise } from "@/lib/format";
+import { serialLabel, serialMatches } from "@/lib/serial";
 import { createSale } from "./actions";
 
 export type CatalogProduct = {
@@ -24,18 +25,6 @@ export type CatalogProduct = {
   salePrice: string;
   quantity: number;
 };
-
-/** 1 -> "001", for display and search. */
-function serialLabel(serial: number): string {
-  return String(serial).padStart(3, "0");
-}
-
-/** Does a product's serial match a typed query like "1", "01", or "001"? */
-function serialMatches(serial: number, q: string): boolean {
-  const digits = q.replace(/\D/g, "");
-  if (!digits) return false;
-  return String(serial) === String(Number(digits)) || serialLabel(serial) === digits;
-}
 
 export type MemberOption = { id: string; name: string; barcode: string };
 type PaymentMethod = { id: string; name: string };

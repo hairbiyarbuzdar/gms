@@ -20,11 +20,7 @@ import {
   type ProductState,
 } from "./actions";
 import { ProductPhotoField } from "./product-photo-field";
-
-/** Sequential id shown zero-padded: 1 -> "001". */
-export function serialLabel(serial: number): string {
-  return String(serial).padStart(3, "0");
-}
+import { serialLabel } from "@/lib/serial";
 
 const inputClass =
   "w-full rounded border border-input bg-background px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-primary focus:ring-1 focus:ring-primary aria-invalid:border-destructive";

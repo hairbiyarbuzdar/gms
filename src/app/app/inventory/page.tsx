@@ -2,11 +2,11 @@ import { Boxes, TriangleAlert } from "lucide-react";
 import { tenantDb } from "@/lib/tenant-db";
 import { formatMoneyPrecise } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
+import { serialLabel } from "@/lib/serial";
 import {
   AddProductDialog,
   AdjustStockDialog,
   EditProductDialog,
-  serialLabel,
   ToggleProductButton,
   type ProductRow,
 } from "./product-dialogs";

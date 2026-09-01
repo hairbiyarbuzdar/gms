@@ -12,6 +12,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { formatMoney } from "@/lib/format";
+import { serialLabel, serialMatches } from "@/lib/serial";
 import { createPurchase } from "./actions";
 import type { MethodOption, ProductOption, SupplierOption } from "./data";
 
@@ -67,14 +68,9 @@ export function PurchaseDialog({
 
   const productMatches = useMemo(() => {
     const q = productQuery.trim().toLowerCase();
-    const digits = q.replace(/\D/g, "");
     const list = q
       ? products.filter(
-          (p) =>
-            p.name.toLowerCase().includes(q) ||
-            (digits !== "" &&
-              (String(p.serial) === String(Number(digits)) ||
-                String(p.serial).padStart(3, "0") === digits))
+          (p) => p.name.toLowerCase().includes(q) || serialMatches(p.serial, q)
         )
       : products;
     // Do not offer products already on the invoice.
@@ -333,7 +329,7 @@ export function PurchaseDialog({
                         >
                           <span className="truncate">{p.name}</span>
                           <span className="data-mono shrink-0 text-[11px] text-muted-foreground">
-                            #{String(p.serial).padStart(3, "0")}
+                            #{serialLabel(p.serial)}
                           </span>
                         </button>
                       </li>
