@@ -2,7 +2,8 @@
 
 import { useCallback, useRef } from "react";
 import JsBarcode from "jsbarcode";
-import { Printer } from "lucide-react";
+import { jsPDF } from "jspdf";
+import { Download, Printer } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -81,6 +82,60 @@ export function BarcodeDialog({
     [target]
   );
 
+  /**
+   * Renders the label onto a small PDF page and downloads it.
+   *
+   * The SVG is rasterised through a canvas first: jsPDF has no SVG support
+   * without an extra plugin, and a PNG keeps the bars crisp at label size.
+   */
+  async function downloadPdf() {
+    if (!target || !svgRef.current) return;
+
+    const svgMarkup = new XMLSerializer().serializeToString(svgRef.current);
+    const svgUrl =
+      "data:image/svg+xml;base64," +
+      btoa(unescape(encodeURIComponent(svgMarkup)));
+
+    const scale = 4; // oversample so print output stays sharp
+    const img = new Image();
+    const png: string = await new Promise((resolve, reject) => {
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return reject(new Error("Canvas unavailable"));
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/png"));
+      };
+      img.onerror = () => reject(new Error("Barcode image failed to load"));
+      img.src = svgUrl;
+    });
+
+    // A compact label page: 80mm wide, height driven by the barcode aspect.
+    const pageW = 80;
+    const imgW = 60;
+    const imgH = (img.height / img.width) * imgW;
+    const textBlock = target.subtitle ? 16 : 10;
+    const pageH = textBlock + imgH + 12;
+
+    const pdf = new jsPDF({ unit: "mm", format: [pageW, pageH], orientation: "portrait" });
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(11);
+    pdf.text(target.title, pageW / 2, 8, { align: "center" });
+    if (target.subtitle) {
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(9);
+      pdf.setTextColor(90);
+      pdf.text(target.subtitle, pageW / 2, 13, { align: "center" });
+      pdf.setTextColor(0);
+    }
+    pdf.addImage(png, "PNG", (pageW - imgW) / 2, textBlock, imgW, imgH);
+    pdf.save(`${target.barcode}.pdf`);
+  }
+
   function print() {
     if (!target || !svgRef.current) return;
 
@@ -158,6 +213,14 @@ export function BarcodeDialog({
             className="rounded border border-border px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary"
           >
             Close
+          </button>
+          <button
+            type="button"
+            onClick={downloadPdf}
+            className="flex items-center gap-2 rounded border border-border px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+          >
+            <Download className="size-4" aria-hidden="true" />
+            Download PDF
           </button>
           <button
             type="button"

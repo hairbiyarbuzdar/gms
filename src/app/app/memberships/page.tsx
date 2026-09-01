@@ -76,7 +76,11 @@ export default async function MembershipsPage({
           <div className="flex flex-wrap items-center gap-2">
             <PackagesDialog packages={packages} />
             <ExtrasDialog extras={extras} />
-            <AddMemberDialog packages={activePackages} extras={activeExtras} />
+            <AddMemberDialog
+              packages={activePackages}
+              extras={activeExtras}
+              paymentMethods={paymentMethods}
+            />
           </div>
         }
       />

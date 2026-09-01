@@ -24,9 +24,12 @@ export function PlatformShell({
     <div className="flex min-h-svh flex-col">
       <header className="sticky top-0 z-40 border-b border-border bg-card">
         <div className="mx-auto flex h-20 w-full max-w-[1440px] items-center gap-6 px-4 md:px-8">
-          <Link href={home} className="flex shrink-0 items-center gap-2 text-primary">
-            <Dumbbell className="size-6" aria-hidden="true" />
-            <span className="text-lg font-bold uppercase tracking-tight">Iron Reserve</span>
+          <Link
+            href={home}
+            aria-label="Home"
+            className="flex shrink-0 items-center text-primary"
+          >
+            <Dumbbell className="size-9" aria-hidden="true" />
           </Link>
 
           <div className="ml-auto flex items-center gap-3">

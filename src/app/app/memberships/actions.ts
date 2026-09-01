@@ -54,6 +54,8 @@ export async function createMembership(
     packageId: formData.get("packageId"),
     photo: formData.get("photo"),
     extraIds: formData.getAll("extraIds").map(String),
+    amountPaid: formData.get("amountPaid"),
+    paymentMethodId: formData.get("paymentMethodId"),
   });
 
   if (!parsed.success) {
@@ -65,11 +67,24 @@ export async function createMembership(
         email: f.email?.[0] ?? "",
         cnic: f.cnic?.[0] ?? "",
         packageId: f.packageId?.[0] ?? "",
+        amountPaid: f.amountPaid?.[0] ?? "",
+        paymentMethodId: f.paymentMethodId?.[0] ?? "",
       },
     };
   }
 
-  const { name, phone, email, cnic, joinDate, packageId, photo, extraIds } = parsed.data;
+  const {
+    name,
+    phone,
+    email,
+    cnic,
+    joinDate,
+    packageId,
+    photo,
+    extraIds,
+    amountPaid,
+    paymentMethodId,
+  } = parsed.data;
 
   // Re-check the package belongs to this tenant: the id came from the client.
   const pkg = await db.package.findFirst({
@@ -79,6 +94,14 @@ export async function createMembership(
 
   if (!pkg) {
     return { fieldErrors: { packageId: "That package is not available." } };
+  }
+
+  const method = await db.paymentMethod.findFirst({
+    where: { id: paymentMethodId, tenantId, isActive: true },
+    select: { id: true },
+  });
+  if (!method) {
+    return { fieldErrors: { paymentMethodId: "That payment method is not available." } };
   }
 
   const chosenExtras = extraIds.length
@@ -142,9 +165,24 @@ export async function createMembership(
         })),
       });
     }
+
+    // The joining payment is the first renewal. It covers the period from
+    // joining to one month later - the same window nextRenewalDate points at.
+    await tx.renewalPayment.create({
+      data: {
+        tenantId,
+        membershipId: membership.id,
+        amount: amountPaid,
+        paymentMethodId,
+        recordedAt: joined,
+        periodStart: joined,
+        periodEnd: addMonths(joined, 1),
+      },
+    });
   });
 
   revalidatePath("/app/memberships");
+  revalidatePath("/app/payment-methods");
   revalidatePath("/app");
   return {
     ok: true,

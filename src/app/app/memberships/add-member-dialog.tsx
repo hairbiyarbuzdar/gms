@@ -13,14 +13,20 @@ import {
 import { createMembership, type ActionState } from "./actions";
 import type { PackageOption } from "./data";
 import { BarcodeDialog, type BarcodeTarget } from "@/components/barcode-dialog";
-import { MemberForm, type ExtraOption } from "./member-form";
+import {
+  MemberForm,
+  type ExtraOption,
+  type PaymentMethodOption,
+} from "./member-form";
 
 export function AddMemberDialog({
   packages,
   extras,
+  paymentMethods,
 }: {
   packages: PackageOption[];
   extras: ExtraOption[];
+  paymentMethods: PaymentMethodOption[];
 }) {
   const [open, setOpen] = useState(false);
   const [state, formAction] = useActionState<ActionState, FormData>(createMembership, {});
@@ -45,6 +51,7 @@ export function AddMemberDialog({
   }, [state.ok, state.created]);
 
   const noPackages = packages.length === 0;
+  const noMethods = paymentMethods.length === 0;
 
   return (
     <>
@@ -68,6 +75,11 @@ export function AddMemberDialog({
             <div className="rounded border border-border bg-secondary px-3 py-3 text-[13px] leading-[18px] text-muted-foreground">
               No packages exist yet. Add a package before enrolling members.
             </div>
+          ) : noMethods ? (
+            <div className="rounded border border-border bg-secondary px-3 py-3 text-[13px] leading-[18px] text-muted-foreground">
+              No payment methods exist yet. Add one before enrolling members so the
+              joining payment can be recorded.
+            </div>
           ) : (
             <MemberForm
               key={formKey}
@@ -76,6 +88,7 @@ export function AddMemberDialog({
               formRef={formRef}
               packages={packages}
               extras={extras}
+              paymentMethods={paymentMethods}
               onCancel={() => setOpen(false)}
             />
           )}

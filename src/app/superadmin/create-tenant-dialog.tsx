@@ -106,7 +106,7 @@ export function CreateTenantDialog() {
           <Field
             id="name"
             label="Gym name"
-            placeholder="Iron Reserve Gulberg"
+            placeholder="Downtown Gym"
             required
             autoFocus
             error={state.fieldErrors?.name}

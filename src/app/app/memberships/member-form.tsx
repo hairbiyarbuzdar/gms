@@ -14,6 +14,8 @@ const inputClass =
 
 export type ExtraOption = { id: string; name: string; fee: string };
 
+export type PaymentMethodOption = { id: string; name: string };
+
 export type MemberInitial = {
   membershipId: string;
   name: string;
@@ -59,6 +61,7 @@ export function MemberForm({
   formRef,
   packages,
   extras,
+  paymentMethods = [],
   initial,
   onCancel,
 }: {
@@ -67,11 +70,18 @@ export function MemberForm({
   formRef: React.RefObject<HTMLFormElement | null>;
   packages: PackageOption[];
   extras: ExtraOption[];
+  paymentMethods?: PaymentMethodOption[];
   initial?: MemberInitial;
   onCancel: () => void;
 }) {
   const editing = Boolean(initial);
   const today = new Date().toISOString().slice(0, 10);
+
+  // The joining payment is only collected on a fresh add.
+  const [packageId, setPackageId] = useState(initial?.packageId ?? packages[0]?.id ?? "");
+  const [showExtras, setShowExtras] = useState(
+    (initial?.extraIds?.length ?? 0) > 0
+  );
 
   const [cnic, setCnic] = useState(initial?.cnic ?? "");
   // In edit mode the existing headshot seeds the preview.
@@ -88,6 +98,15 @@ export function MemberForm({
     (sum, id) => sum + Number(extraById.get(id)?.fee ?? 0),
     0
   );
+
+  const packageFee = Number(
+    packages.find((p) => p.id === packageId)?.price ?? 0
+  );
+  // Prefill the joining payment to what the member owes today.
+  const [amountPaid, setAmountPaid] = useState<string>("");
+  const suggestedAmount = (packageFee + extrasTotal).toFixed(2);
+  const [amountTouched, setAmountTouched] = useState(false);
+  const amountValue = amountTouched ? amountPaid : suggestedAmount;
 
   function addExtra() {
     const id = extraToAdd || unchosen[0]?.id;
@@ -231,7 +250,8 @@ export function MemberForm({
           id="packageId"
           name="packageId"
           required
-          defaultValue={initial?.packageId ?? packages[0]?.id}
+          value={packageId}
+          onChange={(e) => setPackageId(e.target.value)}
           aria-invalid={state.fieldErrors?.packageId ? true : undefined}
           className={inputClass}
         >
@@ -246,90 +266,168 @@ export function MemberForm({
         )}
       </div>
 
-      {/* Extras picker: dropdown + Add, building a removable list. Many allowed. */}
+      {/* Extras: hidden until the member asks for them, then a removable list. */}
       <div className="flex flex-col">
-        <label htmlFor="extra-add" className="label-caps mb-1 text-muted-foreground">
-          Extras{" "}
-          <span className="font-normal normal-case tracking-normal">(optional)</span>
-        </label>
-
-        {extras.length === 0 ? (
-          <p className="rounded border border-border bg-secondary px-3 py-2 text-[12px] text-muted-foreground">
-            No extras exist yet. Add them with the Extras button first.
-          </p>
+        {!showExtras ? (
+          <button
+            type="button"
+            onClick={() => setShowExtras(true)}
+            className="flex w-fit items-center gap-1 rounded border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+          >
+            <Plus className="size-3.5" aria-hidden="true" />
+            Add extras
+          </button>
         ) : (
           <>
-            {/* Each chosen extra rides along as a hidden field. */}
-            {chosenExtraIds.map((id) => (
-              <input key={id} type="hidden" name="extraIds" value={id} />
-            ))}
+            <label htmlFor="extra-add" className="label-caps mb-1 text-muted-foreground">
+              Extras{" "}
+              <span className="font-normal normal-case tracking-normal">(optional)</span>
+            </label>
 
-            <div className="flex gap-2">
-              <select
-                id="extra-add"
-                value={extraToAdd}
-                onChange={(e) => setExtraToAdd(e.target.value)}
-                disabled={unchosen.length === 0}
-                className={`${inputClass} flex-1 disabled:opacity-50`}
-              >
-                {unchosen.length === 0 ? (
-                  <option value="">All extras added</option>
-                ) : (
-                  unchosen.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.name} — {formatMoney(e.fee)}
-                    </option>
-                  ))
-                )}
-              </select>
-              <button
-                type="button"
-                onClick={addExtra}
-                disabled={unchosen.length === 0}
-                className="flex shrink-0 items-center gap-1 rounded border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <Plus className="size-3.5" aria-hidden="true" />
-                Add
-              </button>
-            </div>
+            {extras.length === 0 ? (
+              <p className="rounded border border-border bg-secondary px-3 py-2 text-[12px] text-muted-foreground">
+                No extras exist yet. Add them with the Extras button first.
+              </p>
+            ) : (
+              <>
+                {/* Each chosen extra rides along as a hidden field. */}
+                {chosenExtraIds.map((id) => (
+                  <input key={id} type="hidden" name="extraIds" value={id} />
+                ))}
 
-            {chosenExtraIds.length > 0 && (
-              <ul className="mt-2 flex flex-col divide-y divide-border rounded-lg border border-border">
-                {chosenExtraIds.map((id) => {
-                  const extra = extraById.get(id);
-                  return (
-                    <li
-                      key={id}
-                      className="flex items-center gap-2 px-3 py-2 text-sm"
-                    >
-                      <span className="min-w-0 flex-1 truncate">
-                        {extra?.name ?? "—"}
-                      </span>
-                      <span className="data-mono shrink-0 text-muted-foreground">
-                        {formatMoney(extra?.fee ?? "0")}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setChosenExtraIds((cur) => cur.filter((x) => x !== id))
-                        }
-                        aria-label={`Remove ${extra?.name ?? "extra"}`}
-                        className="rounded p-0.5 text-muted-foreground transition-colors hover:text-destructive"
-                      >
-                        <X className="size-3.5" aria-hidden="true" />
-                      </button>
+                <div className="flex gap-2">
+                  <select
+                    id="extra-add"
+                    value={extraToAdd}
+                    onChange={(e) => setExtraToAdd(e.target.value)}
+                    disabled={unchosen.length === 0}
+                    className={`${inputClass} flex-1 disabled:opacity-50`}
+                  >
+                    {unchosen.length === 0 ? (
+                      <option value="">All extras added</option>
+                    ) : (
+                      unchosen.map((e) => (
+                        <option key={e.id} value={e.id}>
+                          {e.name} — {formatMoney(e.fee)}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={addExtra}
+                    disabled={unchosen.length === 0}
+                    className="flex shrink-0 items-center gap-1 rounded border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Plus className="size-3.5" aria-hidden="true" />
+                    Add
+                  </button>
+                </div>
+
+                {chosenExtraIds.length > 0 && (
+                  <ul className="mt-2 flex flex-col divide-y divide-border rounded-lg border border-border">
+                    {chosenExtraIds.map((id) => {
+                      const extra = extraById.get(id);
+                      return (
+                        <li
+                          key={id}
+                          className="flex items-center gap-2 px-3 py-2 text-sm"
+                        >
+                          <span className="min-w-0 flex-1 truncate">
+                            {extra?.name ?? "—"}
+                          </span>
+                          <span className="data-mono shrink-0 text-muted-foreground">
+                            {formatMoney(extra?.fee ?? "0")}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setChosenExtraIds((cur) => cur.filter((x) => x !== id))
+                            }
+                            aria-label={`Remove ${extra?.name ?? "extra"}`}
+                            className="rounded p-0.5 text-muted-foreground transition-colors hover:text-destructive"
+                          >
+                            <X className="size-3.5" aria-hidden="true" />
+                          </button>
+                        </li>
+                      );
+                    })}
+                    <li className="flex items-center justify-between bg-secondary/50 px-3 py-2 text-sm font-medium">
+                      <span>Extras total</span>
+                      <span className="data-mono">{formatMoney(extrasTotal)}</span>
                     </li>
-                  );
-                })}
-                <li className="flex items-center justify-between bg-secondary/50 px-3 py-2 text-sm font-medium">
-                  <span>Extras total</span>
-                  <span className="data-mono">{formatMoney(extrasTotal)}</span>
-                </li>
-              </ul>
+                  </ul>
+                )}
+              </>
             )}
           </>
         )}
       </div>
+
+      {/* Joining payment - recorded as the member's first renewal. Add mode only. */}
+      {!editing && (
+        <div className="grid grid-cols-2 gap-4 border-t border-border pt-4">
+          <div className="flex flex-col">
+            <label htmlFor="amountPaid" className="label-caps mb-1 text-muted-foreground">
+              Amount paid
+            </label>
+            <input
+              id="amountPaid"
+              name="amountPaid"
+              type="number"
+              min="0"
+              step="0.01"
+              required
+              value={amountValue}
+              onChange={(e) => {
+                setAmountTouched(true);
+                setAmountPaid(e.target.value);
+              }}
+              aria-invalid={state.fieldErrors?.amountPaid ? true : undefined}
+              className={inputClass}
+            />
+            {state.fieldErrors?.amountPaid && (
+              <p className="mt-1 text-[13px] text-destructive">
+                {state.fieldErrors.amountPaid}
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col">
+            <label
+              htmlFor="paymentMethodId"
+              className="label-caps mb-1 text-muted-foreground"
+            >
+              Paid by
+            </label>
+            {paymentMethods.length === 0 ? (
+              <p className="rounded border border-border bg-secondary px-3 py-2 text-[12px] text-muted-foreground">
+                Add a payment method first.
+              </p>
+            ) : (
+              <select
+                id="paymentMethodId"
+                name="paymentMethodId"
+                required
+                defaultValue={paymentMethods[0]?.id}
+                aria-invalid={state.fieldErrors?.paymentMethodId ? true : undefined}
+                className={inputClass}
+              >
+                {paymentMethods.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            {state.fieldErrors?.paymentMethodId && (
+              <p className="mt-1 text-[13px] text-destructive">
+                {state.fieldErrors.paymentMethodId}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       <DialogFooter className="mt-2">
         <button

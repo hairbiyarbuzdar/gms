@@ -28,7 +28,14 @@ const memberFields = {
   extraIds: extraIdsField,
 };
 
-export const createMembershipSchema = z.object(memberFields);
+export const createMembershipSchema = z.object({
+  ...memberFields,
+  /** The joining payment - recorded as the first renewal. */
+  amountPaid: z.coerce
+    .number({ error: "Enter a valid amount." })
+    .positive("Amount must be greater than zero."),
+  paymentMethodId: z.string().trim().min(1, "Select a payment method."),
+});
 
 export const updateMembershipSchema = z.object({
   membershipId: z.string().trim().min(1),
