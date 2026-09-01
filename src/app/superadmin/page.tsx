@@ -49,7 +49,7 @@ export default async function SuperadminPage() {
           <div className="mt-6 overflow-x-auto rounded-lg border border-border bg-card">
             <table className="w-full min-w-[640px] border-collapse text-left">
               <thead>
-                <tr className="border-b border-border bg-secondary">
+                <tr className="border-b border-border bg-primary-tint">
                   <th className="label-caps px-4 py-3 text-muted-foreground">Name</th>
                   <th className="label-caps px-4 py-3 text-muted-foreground">Location</th>
                   <th className="label-caps px-4 py-3 text-muted-foreground">Login</th>

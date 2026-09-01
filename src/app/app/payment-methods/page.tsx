@@ -124,7 +124,7 @@ function MethodGrid({
                 <p className="label-caps text-muted-foreground">Current</p>
                 <p
                   className={`data-mono text-xl font-bold ${
-                    method.currentBalance < 0 ? "text-destructive" : "text-[#2D5A27]"
+                    method.currentBalance < 0 ? "text-destructive" : "text-success"
                   }`}
                 >
                   {formatMoney(method.currentBalance)}

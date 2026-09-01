@@ -81,7 +81,7 @@ export default async function ExpensesPage() {
         <div className="mt-6 overflow-x-auto rounded-lg border border-border bg-card">
           <table className="w-full min-w-[720px] border-collapse text-left">
             <thead>
-              <tr className="border-b border-border bg-secondary">
+              <tr className="border-b border-border bg-primary-tint">
                 <th className="label-caps px-4 py-3 text-muted-foreground">Date</th>
                 <th className="label-caps px-4 py-3 text-muted-foreground">Category</th>
                 <th className="label-caps px-4 py-3 text-muted-foreground">Description</th>

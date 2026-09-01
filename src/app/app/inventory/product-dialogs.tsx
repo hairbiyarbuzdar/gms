@@ -197,7 +197,7 @@ export function EditProductDialog({ product }: { product: ProductRow }) {
       <DialogTrigger asChild>
         <button
           title="Edit"
-          className="rounded border border-border p-1.5 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+          className="rounded border border-border p-1.5 text-primary transition-colors hover:border-primary hover:bg-primary-tint"
         >
           <Pencil className="size-3.5" aria-hidden="true" />
           <span className="sr-only">Edit {product.name}</span>
@@ -298,7 +298,7 @@ export function AdjustStockDialog({ product }: { product: ProductRow }) {
       <DialogTrigger asChild>
         <button
           title="Adjust stock"
-          className="rounded border border-border p-1.5 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+          className="rounded border border-border p-1.5 text-primary transition-colors hover:border-primary hover:bg-primary-tint"
         >
           <SlidersHorizontal className="size-3.5" aria-hidden="true" />
           <span className="sr-only">Adjust stock for {product.name}</span>
@@ -364,7 +364,7 @@ function ToggleSubmit({ isActive, name }: { isActive: boolean; name: string }) {
       type="submit"
       disabled={pending}
       title={isActive ? "Hide from catalog" : "Restore to catalog"}
-      className="rounded border border-border p-1.5 text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:opacity-50"
+      className="rounded border border-border p-1.5 text-primary transition-colors hover:border-primary hover:bg-primary-tint disabled:opacity-50"
     >
       {isActive ? <X className="size-3.5" aria-hidden="true" /> : <Undo2 className="size-3.5" aria-hidden="true" />}
       <span className="sr-only">{isActive ? `Hide ${name}` : `Restore ${name}`}</span>

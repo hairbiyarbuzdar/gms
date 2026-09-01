@@ -446,7 +446,7 @@ export function PosTerminal({
           {done && (
             <div
               role="status"
-              className="mt-3 flex items-start gap-2 rounded border border-[#2D5A27]/30 bg-[#2D5A27]/5 px-3 py-2 text-[13px] text-[#2D5A27]"
+              className="mt-3 flex items-start gap-2 rounded border border-success/30 bg-success/5 px-3 py-2 text-[13px] text-success"
             >
               <Check className="mt-px size-4 shrink-0" aria-hidden="true" />
               <span>Sale recorded as {done}.</span>

@@ -44,7 +44,7 @@ function ToggleSubmit({ isActive, name }: { isActive: boolean; name: string }) {
       type="submit"
       disabled={pending}
       title={isActive ? "Retire this package" : "Restore this package"}
-      className="rounded border border-border p-1.5 text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:opacity-50"
+      className="rounded border border-border p-1.5 text-primary transition-colors hover:border-primary hover:bg-primary-tint disabled:opacity-50"
     >
       {isActive ? (
         <X className="size-3.5" aria-hidden="true" />
@@ -138,7 +138,7 @@ export function PackagesDialog({ packages }: { packages: PackageRow[] }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button className="flex items-center gap-2 rounded border border-border bg-card px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary">
+        <button className="flex items-center gap-2 rounded border border-primary bg-card px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground">
           <Tags className="size-4" aria-hidden="true" />
           Packages
         </button>
@@ -262,7 +262,7 @@ export function PackagesDialog({ packages }: { packages: PackageRow[] }) {
                         type="button"
                         onClick={() => setEditingId(pkg.id)}
                         title="Edit"
-                        className="rounded border border-border p-1.5 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                        className="rounded border border-border p-1.5 text-primary transition-colors hover:border-primary hover:bg-primary-tint"
                       >
                         <Pencil className="size-3.5" aria-hidden="true" />
                         <span className="sr-only">Edit {pkg.name}</span>

@@ -196,7 +196,7 @@ export function EditSupplierDialog({ supplier }: { supplier: SupplierRow }) {
       <DialogTrigger asChild>
         <button
           title="Edit"
-          className="rounded border border-border p-1.5 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+          className="rounded border border-border p-1.5 text-primary transition-colors hover:border-primary hover:bg-primary-tint"
         >
           <Pencil className="size-3.5" aria-hidden="true" />
           <span className="sr-only">Edit {supplier.name}</span>

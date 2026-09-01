@@ -51,7 +51,7 @@ export default async function InventoryPage() {
       />
 
       {lowStock.length > 0 && (
-        <div className="mt-4 flex items-start gap-2 rounded-lg border border-[#B45309]/30 bg-[#B45309]/5 px-4 py-3 text-[13px] text-[#B45309]">
+        <div className="mt-4 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-[13px] text-warning">
           <TriangleAlert className="mt-px size-4 shrink-0" aria-hidden="true" />
           <span>
             {lowStock.length} item{lowStock.length === 1 ? "" : "s"} at or below the reorder
@@ -72,7 +72,7 @@ export default async function InventoryPage() {
         <div className="mt-6 overflow-x-auto rounded-lg border border-border bg-card">
           <table className="w-full min-w-[720px] border-collapse text-left">
             <thead>
-              <tr className="border-b border-border bg-secondary">
+              <tr className="border-b border-border bg-primary-tint">
                 <th className="label-caps px-4 py-3 text-right text-muted-foreground">#</th>
                 <th className="label-caps px-4 py-3 text-muted-foreground">Product</th>
                 <th className="label-caps px-4 py-3 text-muted-foreground">Category</th>
@@ -137,7 +137,7 @@ export default async function InventoryPage() {
                           product.quantity === 0
                             ? "bg-destructive/10 text-destructive"
                             : low
-                              ? "bg-[#B45309]/10 text-[#B45309]"
+                              ? "bg-warning/10 text-warning"
                               : ""
                         }`}
                       >

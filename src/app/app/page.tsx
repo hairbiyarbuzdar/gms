@@ -44,7 +44,7 @@ export default async function TenantDashboardPage() {
             <Link
               key={action.label}
               href={action.href}
-              className="flex items-center gap-2 rounded border border-border bg-card px-3 py-2 text-[13px] font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+              className="flex items-center gap-2 rounded border border-primary bg-card px-3 py-2 text-[13px] font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
             >
               <Icon className="size-4" aria-hidden="true" />
               {action.label}

@@ -36,6 +36,10 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-primary-tint: var(--primary-tint);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -86,8 +90,14 @@
   --input: #e6e6e6;
   --ring: #d2042d;
 
-  --success: #2d5a27;
-  --warning: #b45309;
+  /* Status colours. Brighter than the old muted set so pills and badges read
+     at a glance against a white ground. */
+  --success: #158048;
+  --warning: #c2620a;
+  --info: #1d64c4;
+
+  /* Cherry tint used for table headers and section fills. */
+  --primary-tint: #fdeef1;
 
   /* 4px. The design system is explicit: no pill shapes anywhere. */
   --radius: 0.25rem;

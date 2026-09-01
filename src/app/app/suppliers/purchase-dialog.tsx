@@ -348,7 +348,7 @@ export function PurchaseDialog({
               <div className="overflow-x-auto rounded border border-border">
                 <table className="w-full min-w-[520px] text-left text-sm">
                   <thead>
-                    <tr className="border-b border-border bg-secondary">
+                    <tr className="border-b border-border bg-primary-tint">
                       <th className="label-caps px-3 py-2 text-muted-foreground">Product</th>
                       <th className="label-caps px-3 py-2 text-right text-muted-foreground">Qty</th>
                       <th className="label-caps px-3 py-2 text-right text-muted-foreground">
@@ -446,7 +446,7 @@ export function PurchaseDialog({
 
             {/* Payment now */}
             {noMethods ? (
-              <p className="rounded border border-[#B45309]/30 bg-[#B45309]/5 px-3 py-2.5 text-[13px] text-[#B45309]">
+              <p className="rounded border border-warning/30 bg-warning/5 px-3 py-2.5 text-[13px] text-warning">
                 No payment methods exist yet. The invoice will be saved as unpaid — add a
                 method in Payment Methods to record what you paid.
               </p>
@@ -514,7 +514,7 @@ export function PurchaseDialog({
             {done && (
               <div
                 role="status"
-                className="flex items-center gap-2 rounded border border-[#2D5A27]/30 bg-[#2D5A27]/5 px-3 py-2 text-[13px] text-[#2D5A27]"
+                className="flex items-center gap-2 rounded border border-success/30 bg-success/5 px-3 py-2 text-[13px] text-success"
               >
                 <Check className="size-4 shrink-0" aria-hidden="true" />
                 Purchase invoice recorded.

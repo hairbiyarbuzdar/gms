@@ -144,7 +144,7 @@ export function EditMethodDialog({ method }: { method: MethodBalance }) {
       <DialogTrigger asChild>
         <button
           title="Edit"
-          className="rounded border border-border p-1.5 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+          className="rounded border border-border p-1.5 text-primary transition-colors hover:border-primary hover:bg-primary-tint"
         >
           <Pencil className="size-3.5" aria-hidden="true" />
           <span className="sr-only">Edit {method.name}</span>
@@ -202,7 +202,7 @@ function ToggleSubmit({ isActive, name }: { isActive: boolean; name: string }) {
       type="submit"
       disabled={pending}
       title={isActive ? "Archive this method" : "Restore this method"}
-      className="rounded border border-border p-1.5 text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:opacity-50"
+      className="rounded border border-border p-1.5 text-primary transition-colors hover:border-primary hover:bg-primary-tint disabled:opacity-50"
     >
       {isActive ? (
         <Archive className="size-3.5" aria-hidden="true" />
@@ -257,7 +257,7 @@ export function TransferDialog({
         {compact ? (
           <button
             title="Transfer from here"
-            className="rounded border border-border p-1.5 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+            className="rounded border border-border p-1.5 text-primary transition-colors hover:border-primary hover:bg-primary-tint"
           >
             <ArrowLeftRight className="size-3.5" aria-hidden="true" />
             <span className="sr-only">Transfer</span>

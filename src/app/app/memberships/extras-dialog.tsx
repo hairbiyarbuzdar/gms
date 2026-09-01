@@ -42,7 +42,7 @@ function ToggleSubmit({ isActive, name }: { isActive: boolean; name: string }) {
       type="submit"
       disabled={pending}
       title={isActive ? "Retire this extra" : "Restore this extra"}
-      className="rounded border border-border p-1.5 text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:opacity-50"
+      className="rounded border border-border p-1.5 text-primary transition-colors hover:border-primary hover:bg-primary-tint disabled:opacity-50"
     >
       {isActive ? (
         <X className="size-3.5" aria-hidden="true" />
@@ -119,7 +119,7 @@ export function ExtrasDialog({ extras }: { extras: ExtraRow[] }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button className="flex items-center gap-2 rounded border border-border bg-card px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary">
+        <button className="flex items-center gap-2 rounded border border-primary bg-card px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground">
           <Package className="size-4" aria-hidden="true" />
           Extras
         </button>
@@ -218,7 +218,7 @@ export function ExtrasDialog({ extras }: { extras: ExtraRow[] }) {
                         type="button"
                         onClick={() => setEditingId(extra.id)}
                         title="Edit"
-                        className="rounded border border-border p-1.5 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                        className="rounded border border-border p-1.5 text-primary transition-colors hover:border-primary hover:bg-primary-tint"
                       >
                         <Pencil className="size-3.5" aria-hidden="true" />
                         <span className="sr-only">Edit {extra.name}</span>

@@ -68,7 +68,7 @@ export function MembershipTable({
       <div className="overflow-x-auto rounded-lg border border-border bg-card">
         <table className="w-full min-w-[820px] border-collapse text-left">
           <thead>
-            <tr className="border-b border-border bg-secondary">
+            <tr className="border-b border-border bg-primary-tint">
               <th className="label-caps px-4 py-3 text-muted-foreground">Member</th>
               <th className="label-caps px-4 py-3 text-muted-foreground">Package</th>
               <th className="label-caps px-4 py-3 text-muted-foreground">Joined</th>
@@ -156,7 +156,7 @@ export function MembershipTable({
                         })
                       }
                       title="Show barcode"
-                      className="rounded border border-border p-1.5 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                      className="rounded border border-border p-1.5 text-primary transition-colors hover:border-primary hover:bg-primary-tint"
                     >
                       <Barcode className="size-4" aria-hidden="true" />
                       <span className="sr-only">Barcode for {row.memberName}</span>
@@ -165,7 +165,7 @@ export function MembershipTable({
                       type="button"
                       onClick={() => setEditing(row)}
                       title="Edit member"
-                      className="rounded border border-border p-1.5 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                      className="rounded border border-border p-1.5 text-primary transition-colors hover:border-primary hover:bg-primary-tint"
                     >
                       <Pencil className="size-4" aria-hidden="true" />
                       <span className="sr-only">Edit {row.memberName}</span>
@@ -175,7 +175,7 @@ export function MembershipTable({
                       onClick={() => setRenewing(row)}
                       disabled={!canRenew}
                       title={canRenew ? undefined : "Add a payment method first"}
-                      className="rounded border border-border px-3 py-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded bg-primary px-3 py-1.5 text-[13px] font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Renew
                     </button>

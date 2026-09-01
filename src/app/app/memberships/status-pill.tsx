@@ -16,9 +16,9 @@ export function statusOf(row: Pick<MembershipRow, "status" | "daysUntilDue">) {
 }
 
 const TONES = {
-  danger: "bg-destructive/10 text-destructive",
-  warning: "bg-[#B45309]/10 text-[#B45309]",
-  ok: "bg-[#2D5A27]/10 text-[#2D5A27]",
+  danger: "bg-destructive text-white",
+  warning: "bg-warning text-white",
+  ok: "bg-success text-white",
   muted: "bg-secondary text-muted-foreground",
 } as const;
 

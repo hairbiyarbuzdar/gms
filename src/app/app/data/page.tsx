@@ -74,7 +74,7 @@ export default async function DataViewerPage({
         action={
           <a
             href={`/app/data/export?${query({})}`}
-            className="flex items-center gap-2 rounded border border-border bg-card px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+            className="flex items-center gap-2 rounded border border-primary bg-card px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
           >
             <Download className="size-4" aria-hidden="true" />
             Export CSV
@@ -129,7 +129,7 @@ export default async function DataViewerPage({
           <div className="overflow-x-auto rounded-lg border border-border bg-card">
             <table className="w-full border-collapse text-left">
               <thead>
-                <tr className="border-b border-border bg-secondary">
+                <tr className="border-b border-border bg-primary-tint">
                   {meta.columns.map((column) => (
                     <th
                       key={column.key}

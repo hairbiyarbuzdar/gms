@@ -11,8 +11,8 @@ export const metadata = { title: "Suppliers" };
 
 const STATUS_STYLES = {
   UNPAID: "bg-destructive/10 text-destructive",
-  PARTIAL: "bg-[#B45309]/10 text-[#B45309]",
-  PAID: "bg-[#2D5A27]/10 text-[#2D5A27]",
+  PARTIAL: "bg-warning/10 text-warning",
+  PAID: "bg-success/10 text-success",
 } as const;
 
 export default async function SuppliersPage() {
@@ -61,7 +61,7 @@ export default async function SuppliersPage() {
           <div className="overflow-x-auto rounded-lg border border-border bg-card">
             <table className="w-full min-w-[720px] border-collapse text-left">
               <thead>
-                <tr className="border-b border-border bg-secondary">
+                <tr className="border-b border-border bg-primary-tint">
                   <th className="label-caps px-4 py-3 text-muted-foreground">Name</th>
                   <th className="label-caps px-4 py-3 text-muted-foreground">Phone</th>
                   <th className="label-caps px-4 py-3 text-muted-foreground">Email</th>
@@ -83,7 +83,7 @@ export default async function SuppliersPage() {
                     </td>
                     <td
                       className={`data-mono px-4 py-3 text-right ${
-                        s.outstanding > 0 ? "font-medium text-[#B45309]" : "text-muted-foreground"
+                        s.outstanding > 0 ? "font-medium text-warning" : "text-muted-foreground"
                       }`}
                     >
                       {formatMoney(s.outstanding)}
@@ -120,7 +120,7 @@ export default async function SuppliersPage() {
           <div className="overflow-x-auto rounded-lg border border-border bg-card">
             <table className="w-full min-w-[820px] border-collapse text-left">
               <thead>
-                <tr className="border-b border-border bg-secondary">
+                <tr className="border-b border-border bg-primary-tint">
                   <th className="label-caps px-4 py-3 text-muted-foreground">Date</th>
                   <th className="label-caps px-4 py-3 text-muted-foreground">Supplier</th>
                   <th className="label-caps px-4 py-3 text-muted-foreground">Ref</th>
