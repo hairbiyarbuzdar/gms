@@ -25,7 +25,7 @@ export type PurchaseRow = {
 };
 
 export type SupplierOption = { id: string; name: string };
-export type ProductOption = { id: string; name: string; sku: string | null };
+export type ProductOption = { id: string; name: string; serial: number };
 export type MethodOption = { id: string; name: string };
 
 function num(value: { toString(): string } | null | undefined): number {
@@ -124,7 +124,7 @@ export async function getPurchaseFormData() {
     db.product.findMany({
       where: { tenantId, isActive: true },
       orderBy: { createdAt: "desc" },
-      select: { id: true, name: true, sku: true },
+      select: { id: true, name: true, serial: true },
     }),
     db.paymentMethod.findMany({
       where: { tenantId, isActive: true },

@@ -2,8 +2,13 @@ import { z } from "zod";
 
 export const productSchema = z.object({
   name: z.string().trim().min(1, "Name is required.").max(120),
-  sku: z.string().trim().max(60).optional(),
   category: z.string().trim().max(60).optional(),
+  /** data: URL from the file picker, "" to keep / none, "__remove__" to clear. */
+  photo: z.string().trim().optional(),
+  costPrice: z.coerce
+    .number({ error: "Enter a valid cost." })
+    .nonnegative("Cost cannot be negative.")
+    .max(9_999_999_999, "Cost is too large."),
   salePrice: z.coerce
     .number({ error: "Enter a valid price." })
     .nonnegative("Price cannot be negative.")

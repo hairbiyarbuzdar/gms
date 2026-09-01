@@ -17,12 +17,25 @@ import { createSale } from "./actions";
 
 export type CatalogProduct = {
   id: string;
+  serial: number;
   name: string;
-  sku: string | null;
   category: string | null;
+  photoUrl: string | null;
   salePrice: string;
   quantity: number;
 };
+
+/** 1 -> "001", for display and search. */
+function serialLabel(serial: number): string {
+  return String(serial).padStart(3, "0");
+}
+
+/** Does a product's serial match a typed query like "1", "01", or "001"? */
+function serialMatches(serial: number, q: string): boolean {
+  const digits = q.replace(/\D/g, "");
+  if (!digits) return false;
+  return String(serial) === String(Number(digits)) || serialLabel(serial) === digits;
+}
 
 export type MemberOption = { id: string; name: string; barcode: string };
 type PaymentMethod = { id: string; name: string };
@@ -53,9 +66,7 @@ export function PosTerminal({
     const q = query.trim().toLowerCase();
     if (!q) return products;
     return products.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        (p.sku?.toLowerCase().includes(q) ?? false)
+      (p) => p.name.toLowerCase().includes(q) || serialMatches(p.serial, q)
     );
   }, [products, query]);
 
@@ -109,13 +120,13 @@ export function PosTerminal({
     );
   }
 
-  /** Scanning an exact SKU adds it straight to the cart. */
+  /** Enter on an exact serial (or a lone match) adds it straight to the cart. */
   function onSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key !== "Enter") return;
     event.preventDefault();
-    const q = query.trim().toLowerCase();
+    const q = query.trim();
     if (!q) return;
-    const exact = products.find((p) => p.sku?.toLowerCase() === q);
+    const exact = products.find((p) => serialMatches(p.serial, q));
     const target = exact ?? (visible.length === 1 ? visible[0] : null);
     if (target && target.quantity > 0) {
       addToCart(target);
@@ -167,8 +178,8 @@ export function PosTerminal({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={onSearchKeyDown}
-              placeholder="Scan barcode or search…"
-              aria-label="Scan barcode or search products"
+              placeholder="Serial number or name…"
+              aria-label="Search products by serial number or name"
               className="w-full rounded border border-input bg-background py-2 pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-primary focus:ring-1 focus:ring-primary"
             />
           </div>
@@ -219,12 +230,18 @@ export function PosTerminal({
                           </span>
                         )}
                       </div>
-                      <p className="text-sm font-medium leading-snug">{product.name}</p>
-                      {product.sku && (
-                        <p className="data-mono mt-0.5 text-[11px] text-muted-foreground">
-                          {product.sku}
-                        </p>
+                      {product.photoUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={product.photoUrl}
+                          alt=""
+                          className="mb-2 h-20 w-full rounded object-cover"
+                        />
                       )}
+                      <p className="text-sm font-medium leading-snug">{product.name}</p>
+                      <p className="data-mono mt-0.5 text-[11px] text-muted-foreground">
+                        #{serialLabel(product.serial)}
+                      </p>
                       <p className="data-mono mt-auto pt-2 text-sm font-semibold text-primary">
                         {formatMoneyPrecise(product.salePrice)}
                       </p>
@@ -317,7 +334,22 @@ export function PosTerminal({
           ) : (
             <ul className="divide-y divide-border">
               {lines.map((line) => (
-                <li key={line.productId} className="flex items-start gap-2 px-4 py-3">
+                <li key={line.productId} className="flex items-start gap-2.5 px-4 py-3">
+                  {line.product.photoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={line.product.photoUrl}
+                      alt=""
+                      className="size-10 shrink-0 rounded object-cover"
+                    />
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      className="flex size-10 shrink-0 items-center justify-center rounded bg-secondary text-[10px] font-bold text-muted-foreground"
+                    >
+                      #{serialLabel(line.product.serial)}
+                    </span>
+                  )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{line.product.name}</p>
                     <p className="data-mono text-[12px] text-muted-foreground">

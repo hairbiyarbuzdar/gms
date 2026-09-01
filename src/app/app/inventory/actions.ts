@@ -7,21 +7,21 @@ import {
   productSchema,
   updateProductSchema,
 } from "@/lib/validators/product";
+import { deleteProductPhoto, saveProductPhoto } from "@/lib/product-photo";
 
 export type ProductState = {
   ok?: boolean;
   error?: string;
   fieldErrors?: Record<string, string>;
-  /** Set after a successful create, so the caller can offer a shelf label. */
-  created?: { name: string; code: string; category: string | null };
 };
 
 function fields(error: { flatten(): { fieldErrors: Record<string, string[] | undefined> } }) {
   const f = error.flatten().fieldErrors;
   return {
     name: f.name?.[0] ?? "",
-    sku: f.sku?.[0] ?? "",
     category: f.category?.[0] ?? "",
+    photo: f.photo?.[0] ?? "",
+    costPrice: f.costPrice?.[0] ?? "",
     salePrice: f.salePrice?.[0] ?? "",
     quantity: f.quantity?.[0] ?? "",
     reorderLevel: f.reorderLevel?.[0] ?? "",
@@ -37,8 +37,9 @@ export async function createProduct(
 
   const parsed = productSchema.safeParse({
     name: formData.get("name"),
-    sku: formData.get("sku"),
     category: formData.get("category"),
+    photo: formData.get("photo"),
+    costPrice: formData.get("costPrice"),
     salePrice: formData.get("salePrice"),
     quantity: formData.get("quantity"),
     reorderLevel: formData.get("reorderLevel"),
@@ -46,17 +47,25 @@ export async function createProduct(
 
   if (!parsed.success) return { fieldErrors: fields(parsed.error) };
 
-  const { name, sku, category, salePrice, quantity, reorderLevel } = parsed.data;
+  const { name, category, photo, costPrice, salePrice, quantity, reorderLevel } =
+    parsed.data;
 
-  if (sku) {
-    const clash = await db.product.findFirst({
-      where: { tenantId, sku },
-      select: { id: true },
-    });
-    if (clash) return { fieldErrors: { sku: "That SKU is already in use." } };
+  // Write the photo before opening the transaction - a disk write should not
+  // hold one open.
+  let photoUrl: string | null = null;
+  if (photo && photo.startsWith("data:image/")) {
+    try {
+      photoUrl = await saveProductPhoto(photo);
+    } catch (error) {
+      return {
+        fieldErrors: {
+          photo: error instanceof Error ? error.message : "Photo could not be saved.",
+        },
+      };
+    }
   }
 
-  const serial = await db.$transaction(async (tx) => {
+  await db.$transaction(async (tx) => {
     // Next serial for this tenant, starting at 1. Derived inside the
     // transaction so two concurrent creates cannot read the same value; the
     // unique index on (tenantId, serial) rejects a collision if they do.
@@ -71,8 +80,9 @@ export async function createProduct(
         tenantId,
         serial: (last?.serial ?? 0) + 1,
         name,
-        sku: sku || null,
         category: category || null,
+        photoUrl,
+        costPrice,
         salePrice,
         quantity,
         reorderLevel,
@@ -91,18 +101,11 @@ export async function createProduct(
         },
       });
     }
-
-    return product.serial;
   });
 
   revalidatePath("/app/inventory");
   revalidatePath("/app/invoices");
-  return {
-    ok: true,
-    // Label the SKU when there is one; otherwise the serial, so every product
-    // still gets something scannable.
-    created: { name, code: sku || String(serial), category: category || null },
-  };
+  return { ok: true };
 }
 
 /**
@@ -111,6 +114,9 @@ export async function createProduct(
  * Quantity is deliberately not editable here - stock moves only through
  * documented adjustments, sales, and purchases, so the movement history
  * always explains the current count.
+ *
+ * The photo field is a three-way switch: a data: URL replaces it (and the
+ * old file is deleted), "__remove__" clears it, and "" leaves it untouched.
  */
 export async function updateProduct(
   _prev: ProductState,
@@ -121,8 +127,9 @@ export async function updateProduct(
   const parsed = updateProductSchema.safeParse({
     id: formData.get("id"),
     name: formData.get("name"),
-    sku: formData.get("sku"),
     category: formData.get("category"),
+    photo: formData.get("photo"),
+    costPrice: formData.get("costPrice"),
     salePrice: formData.get("salePrice"),
     quantity: formData.get("quantity"),
     reorderLevel: formData.get("reorderLevel"),
@@ -130,26 +137,45 @@ export async function updateProduct(
 
   if (!parsed.success) return { fieldErrors: fields(parsed.error) };
 
-  const { id, name, sku, category, salePrice, reorderLevel } = parsed.data;
+  const { id, name, category, photo, costPrice, salePrice, reorderLevel } = parsed.data;
 
   const existing = await db.product.findFirst({
     where: { id, tenantId },
-    select: { id: true },
+    select: { id: true, photoUrl: true },
   });
   if (!existing) return { error: "Product not found." };
 
-  if (sku) {
-    const clash = await db.product.findFirst({
-      where: { tenantId, sku, id: { not: id } },
-      select: { id: true },
-    });
-    if (clash) return { fieldErrors: { sku: "That SKU is already in use." } };
+  let photoUpdate: { photoUrl?: string | null } = {};
+  const oldPhoto = existing.photoUrl;
+  if (photo === "__remove__") {
+    photoUpdate = { photoUrl: null };
+  } else if (photo && photo.startsWith("data:image/")) {
+    try {
+      photoUpdate = { photoUrl: await saveProductPhoto(photo) };
+    } catch (error) {
+      return {
+        fieldErrors: {
+          photo: error instanceof Error ? error.message : "Photo could not be saved.",
+        },
+      };
+    }
   }
 
   await db.product.update({
     where: { id },
-    data: { name, sku: sku || null, category: category || null, salePrice, reorderLevel },
+    data: {
+      name,
+      category: category || null,
+      costPrice,
+      salePrice,
+      reorderLevel,
+      ...photoUpdate,
+    },
   });
+
+  if ((photo === "__remove__" || photo?.startsWith("data:image/")) && oldPhoto) {
+    await deleteProductPhoto(oldPhoto);
+  }
 
   revalidatePath("/app/inventory");
   revalidatePath("/app/invoices");

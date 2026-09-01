@@ -91,10 +91,10 @@ export const DATASET_META: Record<DatasetKey, DatasetMeta> = {
     label: "Products",
     description: "Retail catalogue with current stock levels.",
     columns: [
-      { key: "serial", label: "#", type: "number", numeric: true },
+      { key: "serial", label: "#", type: "text" },
       { key: "name", label: "Product", type: "text" },
-      { key: "sku", label: "SKU", type: "text" },
       { key: "category", label: "Category", type: "text" },
+      { key: "costPrice", label: "Cost", type: "money", numeric: true },
       { key: "salePrice", label: "Price", type: "money", numeric: true },
       { key: "quantity", label: "In stock", type: "number", numeric: true },
       { key: "status", label: "Status", type: "text" },
@@ -350,9 +350,7 @@ export async function getDataset(query: Query): Promise<DatasetResult> {
   if (dataset === "products") {
     const where: Prisma.ProductWhereInput = {
       tenantId,
-      ...(q
-        ? { OR: [{ name: contains(q) }, { sku: contains(q) }, { category: contains(q) }] }
-        : {}),
+      ...(q ? { OR: [{ name: contains(q) }, { category: contains(q) }] } : {}),
     };
 
     const [total, rows] = await Promise.all([
@@ -365,8 +363,8 @@ export async function getDataset(query: Query): Promise<DatasetResult> {
         select: {
           serial: true,
           name: true,
-          sku: true,
           category: true,
+          costPrice: true,
           salePrice: true,
           quantity: true,
           isActive: true,
@@ -376,10 +374,10 @@ export async function getDataset(query: Query): Promise<DatasetResult> {
 
     return paged(
       rows.map((r) => ({
-        serial: r.serial,
+        serial: String(r.serial).padStart(3, "0"),
         name: r.name,
-        sku: r.sku,
         category: r.category,
+        costPrice: money(r.costPrice),
         salePrice: money(r.salePrice),
         quantity: r.quantity,
         status: r.isActive ? "Active" : "Hidden",

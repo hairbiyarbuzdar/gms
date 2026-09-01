@@ -56,6 +56,7 @@ export async function createMembership(
     extraIds: formData.getAll("extraIds").map(String),
     amountPaid: formData.get("amountPaid"),
     paymentMethodId: formData.get("paymentMethodId"),
+    renewalDate: formData.get("renewalDate"),
   });
 
   if (!parsed.success) {
@@ -69,6 +70,7 @@ export async function createMembership(
         packageId: f.packageId?.[0] ?? "",
         amountPaid: f.amountPaid?.[0] ?? "",
         paymentMethodId: f.paymentMethodId?.[0] ?? "",
+        renewalDate: f.renewalDate?.[0] ?? "",
       },
     };
   }
@@ -84,6 +86,7 @@ export async function createMembership(
     extraIds,
     amountPaid,
     paymentMethodId,
+    renewalDate,
   } = parsed.data;
 
   // Re-check the package belongs to this tenant: the id came from the client.
@@ -127,6 +130,8 @@ export async function createMembership(
   const barcode = await generateBarcode(db, tenantId);
   const now = new Date();
   const joined = joinDate ? new Date(joinDate) : now;
+  // First renewal: the date the user picked, else one month after joining.
+  const firstRenewal = renewalDate ? new Date(renewalDate) : addMonths(joined, 1);
 
   await db.$transaction(async (tx) => {
     const member = await tx.member.create({
@@ -148,8 +153,9 @@ export async function createMembership(
         memberId: member.id,
         packageId,
         startDate: joined,
-        // First renewal falls due one month after joining (FR-16).
-        nextRenewalDate: addMonths(joined, 1),
+        // First renewal date - defaults to one month after joining (FR-16),
+        // but the add form lets the user set it explicitly.
+        nextRenewalDate: firstRenewal,
         status: "ACTIVE",
       },
     });
@@ -176,7 +182,7 @@ export async function createMembership(
         paymentMethodId,
         recordedAt: joined,
         periodStart: joined,
-        periodEnd: addMonths(joined, 1),
+        periodEnd: firstRenewal,
       },
     });
   });
@@ -313,6 +319,48 @@ export async function updateMembership(
   revalidatePath("/app/memberships");
   revalidatePath("/app");
   return { ok: true };
+}
+
+export type PaymentHistoryRow = {
+  id: string;
+  amount: string;
+  method: string;
+  recordedAt: string;
+  periodStart: string;
+  periodEnd: string;
+};
+
+/**
+ * The renewal payments recorded against one membership, newest first.
+ * Used by the member details view.
+ */
+export async function getMemberPayments(
+  membershipId: string
+): Promise<PaymentHistoryRow[]> {
+  const { db, tenantId } = await tenantDb();
+
+  // membershipId came from the client, so it is filtered by tenant here.
+  const rows = await db.renewalPayment.findMany({
+    where: { membershipId, tenantId },
+    orderBy: { recordedAt: "desc" },
+    select: {
+      id: true,
+      amount: true,
+      recordedAt: true,
+      periodStart: true,
+      periodEnd: true,
+      paymentMethod: { select: { name: true } },
+    },
+  });
+
+  return rows.map((r) => ({
+    id: r.id,
+    amount: r.amount.toString(),
+    method: r.paymentMethod.name,
+    recordedAt: r.recordedAt.toISOString(),
+    periodStart: r.periodStart.toISOString(),
+    periodEnd: r.periodEnd.toISOString(),
+  }));
 }
 
 /**

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { tenantDb } from "@/lib/tenant-db";
+import { getMethodBalance } from "@/lib/payment-method-balance";
 import {
   addPurchasePaymentSchema,
   createPurchaseSchema,
@@ -187,6 +188,13 @@ export async function createPurchase(input: unknown): Promise<SupplierState> {
       select: { id: true },
     });
     if (!method) return { error: "That payment method is unavailable." };
+
+    const balance = await getMethodBalance(db, tenantId, paymentMethodId);
+    if (paid > balance + 0.001) {
+      return {
+        error: `Not enough funds in that method - ${balance.toFixed(2)} available, ${paid.toFixed(2)} to pay.`,
+      };
+    }
   }
 
   await db.$transaction(async (tx) => {
@@ -293,6 +301,15 @@ export async function addPurchasePayment(
 
   if (alreadyPaid + amount > total + 0.001) {
     return { fieldErrors: { amount: `Only ${(total - alreadyPaid).toFixed(2)} outstanding.` } };
+  }
+
+  const balance = await getMethodBalance(db, tenantId, paymentMethodId);
+  if (amount > balance + 0.001) {
+    return {
+      fieldErrors: {
+        amount: `Not enough funds. ${balance.toFixed(2)} available in that method.`,
+      },
+    };
   }
 
   await db.$transaction(async (tx) => {

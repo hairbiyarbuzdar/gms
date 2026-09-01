@@ -35,6 +35,13 @@ export const createMembershipSchema = z.object({
     .number({ error: "Enter a valid amount." })
     .positive("Amount must be greater than zero."),
   paymentMethodId: z.string().trim().min(1, "Select a payment method."),
+  /** First renewal due date. Blank -> one month after joining. */
+  renewalDate: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid date.")
+    .optional()
+    .or(z.literal("")),
 });
 
 export const updateMembershipSchema = z.object({

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { tenantDb } from "@/lib/tenant-db";
+import { getMethodBalance } from "@/lib/payment-method-balance";
 
 const expenseSchema = z.object({
   categoryId: z.string().trim().min(1, "Choose a category."),
@@ -78,6 +79,17 @@ export async function createExpense(
   if (!category) return { fieldErrors: { categoryId: "That category is unavailable." } };
   if (!method) {
     return { fieldErrors: { paymentMethodId: "That payment method is unavailable." } };
+  }
+
+  // An expense cannot overdraw its method (one user per tenant, so a plain
+  // pre-check is enough - no concurrent writer to race).
+  const balance = await getMethodBalance(db, tenantId, paymentMethodId);
+  if (amount > balance + 0.001) {
+    return {
+      fieldErrors: {
+        amount: `Not enough funds. ${balance.toFixed(2)} available in that method.`,
+      },
+    };
   }
 
   await db.expense.create({

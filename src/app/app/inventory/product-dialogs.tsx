@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { Barcode, Pencil, Plus, SlidersHorizontal, TriangleAlert, Undo2, X } from "lucide-react";
+import { Pencil, Plus, SlidersHorizontal, TriangleAlert, Undo2, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { BarcodeDialog, type BarcodeTarget } from "@/components/barcode-dialog";
 import {
   adjustStock,
   createProduct,
@@ -20,14 +19,11 @@ import {
   updateProduct,
   type ProductState,
 } from "./actions";
+import { ProductPhotoField } from "./product-photo-field";
 
-/**
- * What a product's label encodes: its SKU when set, otherwise the serial.
- * Every product is therefore scannable, and the POS - which matches on SKU -
- * keeps working for the ones that have one.
- */
-export function productCode(product: Pick<ProductRow, "sku" | "serial">): string {
-  return product.sku || String(product.serial);
+/** Sequential id shown zero-padded: 1 -> "001". */
+export function serialLabel(serial: number): string {
+  return String(serial).padStart(3, "0");
 }
 
 const inputClass =
@@ -37,8 +33,9 @@ export type ProductRow = {
   id: string;
   serial: number;
   name: string;
-  sku: string | null;
   category: string | null;
+  photoUrl: string | null;
+  costPrice: string;
   salePrice: string;
   quantity: number;
   reorderLevel: number;
@@ -87,25 +84,18 @@ export function AddProductDialog() {
   const [open, setOpen] = useState(false);
   const [state, action] = useActionState<ProductState, FormData>(createProduct, {});
   const formRef = useRef<HTMLFormElement>(null);
-  const [justCreated, setJustCreated] = useState<BarcodeTarget | null>(null);
+  // Remount the form after each add so the photo field resets.
+  const [formKey, setFormKey] = useState(0);
 
   useEffect(() => {
     if (state.ok) {
       setOpen(false);
       formRef.current?.reset();
-      // Hand straight to the label so it can be printed for the shelf.
-      if (state.created) {
-        setJustCreated({
-          title: state.created.name,
-          barcode: state.created.code,
-          subtitle: state.created.category ?? undefined,
-        });
-      }
+      setFormKey((k) => k + 1);
     }
-  }, [state.ok, state.created]);
+  }, [state.ok]);
 
   return (
-    <>
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <button className="flex items-center gap-2 rounded bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-[#570000]">
@@ -114,27 +104,72 @@ export function AddProductDialog() {
         </button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>New product</DialogTitle>
-          <DialogDescription>Retail stock sold at the front desk.</DialogDescription>
+          <DialogDescription>
+            Retail stock sold at the front desk. A serial number is assigned
+            automatically — use it, or the name, to find the product at the till.
+          </DialogDescription>
         </DialogHeader>
 
-        <form ref={formRef} action={action} className="flex flex-col gap-4" noValidate>
-          <Field id="name" label="Name" required autoFocus placeholder="Whey Protein 1kg" error={state.fieldErrors?.name} />
+        <form key={formKey} ref={formRef} action={action} className="flex flex-col gap-4" noValidate>
+          <ProductPhotoField name="photo" error={state.fieldErrors?.photo} />
+
+          <Field
+            id="name"
+            label="Name"
+            required
+            autoFocus
+            placeholder="Whey Protein 1kg"
+            error={state.fieldErrors?.name}
+          />
+
+          <Field
+            id="category"
+            label="Category"
+            placeholder="Supplements"
+            hint="Optional"
+            error={state.fieldErrors?.category}
+          />
 
           <div className="grid grid-cols-2 gap-4">
-            <Field id="sku" label="SKU / barcode" placeholder="WP-1KG" hint="Optional" error={state.fieldErrors?.sku} />
-            <Field id="category" label="Category" placeholder="Supplements" hint="Optional" error={state.fieldErrors?.category} />
+            <Field
+              id="costPrice"
+              label="Cost price (PKR)"
+              type="number"
+              step="0.01"
+              min="0"
+              required
+              placeholder="7000"
+              error={state.fieldErrors?.costPrice}
+            />
+            <Field
+              id="salePrice"
+              label="Sale price (PKR)"
+              type="number"
+              step="0.01"
+              min="0"
+              required
+              placeholder="9500"
+              error={state.fieldErrors?.salePrice}
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Field id="salePrice" label="Price (PKR)" type="number" step="0.01" min="0" required placeholder="9500" error={state.fieldErrors?.salePrice} />
-            <Field id="quantity" label="In stock" type="number" min="0" required defaultValue={0} error={state.fieldErrors?.quantity} />
-          </div>
+          <Field
+            id="quantity"
+            label="Stock"
+            type="number"
+            min="0"
+            required
+            defaultValue={0}
+            error={state.fieldErrors?.quantity}
+          />
 
-          {/* Not asked for on creation; set it later by editing the product. */}
+          {/* Set the reorder level later by editing the product. */}
           <input type="hidden" name="reorderLevel" value={0} />
+
+          {state.error && <p className="text-[13px] text-destructive">{state.error}</p>}
 
           <DialogFooter className="mt-2">
             <button
@@ -149,15 +184,6 @@ export function AddProductDialog() {
         </form>
       </DialogContent>
     </Dialog>
-
-    <BarcodeDialog
-      target={justCreated}
-      open={justCreated !== null}
-      onOpenChange={(next) => !next && setJustCreated(null)}
-      heading="Product added"
-      description="Print the shelf label now, or find it later from the product's row."
-    />
-    </>
   );
 }
 
@@ -182,11 +208,12 @@ export function EditProductDialog({ product }: { product: ProductRow }) {
         </button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Edit product</DialogTitle>
           <DialogDescription>
-            Stock is changed through adjustments, so every count has a reason behind it.
+            Serial {serialLabel(product.serial)}. Stock is changed through adjustments, so
+            every count has a reason behind it.
           </DialogDescription>
         </DialogHeader>
 
@@ -194,21 +221,56 @@ export function EditProductDialog({ product }: { product: ProductRow }) {
           <input type="hidden" name="id" value={product.id} />
           <input type="hidden" name="quantity" value={product.quantity} />
 
+          <ProductPhotoField
+            name="photo"
+            editing
+            initialUrl={product.photoUrl}
+            error={state.fieldErrors?.photo}
+          />
+
           <Field id="name" label="Name" required defaultValue={product.name} error={state.fieldErrors?.name} />
 
-          <div className="grid grid-cols-2 gap-4">
-            <Field id="sku" label="SKU / barcode" defaultValue={product.sku ?? ""} error={state.fieldErrors?.sku} />
-            <Field id="category" label="Category" defaultValue={product.category ?? ""} error={state.fieldErrors?.category} />
-          </div>
+          <Field
+            id="category"
+            label="Category"
+            defaultValue={product.category ?? ""}
+            error={state.fieldErrors?.category}
+          />
 
           <div className="grid grid-cols-2 gap-4">
-            <Field id="salePrice" label="Price (PKR)" type="number" step="0.01" min="0" required defaultValue={product.salePrice} error={state.fieldErrors?.salePrice} />
-            <Field id="reorderLevel" label="Reorder at" type="number" min="0" required defaultValue={product.reorderLevel} error={state.fieldErrors?.reorderLevel} />
+            <Field
+              id="costPrice"
+              label="Cost price (PKR)"
+              type="number"
+              step="0.01"
+              min="0"
+              required
+              defaultValue={product.costPrice}
+              error={state.fieldErrors?.costPrice}
+            />
+            <Field
+              id="salePrice"
+              label="Sale price (PKR)"
+              type="number"
+              step="0.01"
+              min="0"
+              required
+              defaultValue={product.salePrice}
+              error={state.fieldErrors?.salePrice}
+            />
           </div>
 
-          {state.error && (
-            <p className="text-[13px] text-destructive">{state.error}</p>
-          )}
+          <Field
+            id="reorderLevel"
+            label="Reorder at"
+            type="number"
+            min="0"
+            required
+            defaultValue={product.reorderLevel}
+            error={state.fieldErrors?.reorderLevel}
+          />
+
+          {state.error && <p className="text-[13px] text-destructive">{state.error}</p>}
 
           <DialogFooter className="mt-2">
             <button
@@ -311,41 +373,6 @@ function ToggleSubmit({ isActive, name }: { isActive: boolean; name: string }) {
       {isActive ? <X className="size-3.5" aria-hidden="true" /> : <Undo2 className="size-3.5" aria-hidden="true" />}
       <span className="sr-only">{isActive ? `Hide ${name}` : `Restore ${name}`}</span>
     </button>
-  );
-}
-
-/** Opens the shelf label for one product. */
-export function ProductBarcodeButton({ product }: { product: ProductRow }) {
-  const [showing, setShowing] = useState(false);
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setShowing(true)}
-        title="Show barcode"
-        className="rounded border border-border p-1.5 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
-      >
-        <Barcode className="size-3.5" aria-hidden="true" />
-        <span className="sr-only">Barcode for {product.name}</span>
-      </button>
-
-      <BarcodeDialog
-        target={
-          showing
-            ? {
-                title: product.name,
-                barcode: productCode(product),
-                subtitle: product.category ?? undefined,
-              }
-            : null
-        }
-        open={showing}
-        onOpenChange={setShowing}
-        heading="Product barcode"
-        description="Scan this at the till to add the product to a sale."
-      />
-    </>
   );
 }
 

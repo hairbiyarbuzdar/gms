@@ -67,10 +67,14 @@ export function PurchaseDialog({
 
   const productMatches = useMemo(() => {
     const q = productQuery.trim().toLowerCase();
+    const digits = q.replace(/\D/g, "");
     const list = q
       ? products.filter(
           (p) =>
-            p.name.toLowerCase().includes(q) || (p.sku?.toLowerCase().includes(q) ?? false)
+            p.name.toLowerCase().includes(q) ||
+            (digits !== "" &&
+              (String(p.serial) === String(Number(digits)) ||
+                String(p.serial).padStart(3, "0") === digits))
         )
       : products;
     // Do not offer products already on the invoice.
@@ -328,11 +332,9 @@ export function PurchaseDialog({
                           className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-secondary"
                         >
                           <span className="truncate">{p.name}</span>
-                          {p.sku && (
-                            <span className="data-mono shrink-0 text-[11px] text-muted-foreground">
-                              {p.sku}
-                            </span>
-                          )}
+                          <span className="data-mono shrink-0 text-[11px] text-muted-foreground">
+                            #{String(p.serial).padStart(3, "0")}
+                          </span>
                         </button>
                       </li>
                     ))}

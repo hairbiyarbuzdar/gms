@@ -6,7 +6,7 @@ import {
   AddProductDialog,
   AdjustStockDialog,
   EditProductDialog,
-  ProductBarcodeButton,
+  serialLabel,
   ToggleProductButton,
   type ProductRow,
 } from "./product-dialogs";
@@ -23,8 +23,9 @@ export default async function InventoryPage() {
       id: true,
       serial: true,
       name: true,
-      sku: true,
       category: true,
+      photoUrl: true,
+      costPrice: true,
       salePrice: true,
       quantity: true,
       reorderLevel: true,
@@ -34,6 +35,7 @@ export default async function InventoryPage() {
 
   const products: ProductRow[] = records.map((p) => ({
     ...p,
+    costPrice: p.costPrice.toString(),
     salePrice: p.salePrice.toString(),
   }));
 
@@ -74,6 +76,7 @@ export default async function InventoryPage() {
                 <th className="label-caps px-4 py-3 text-right text-muted-foreground">#</th>
                 <th className="label-caps px-4 py-3 text-muted-foreground">Product</th>
                 <th className="label-caps px-4 py-3 text-muted-foreground">Category</th>
+                <th className="label-caps px-4 py-3 text-right text-muted-foreground">Cost</th>
                 <th className="label-caps px-4 py-3 text-right text-muted-foreground">Price</th>
                 <th className="label-caps px-4 py-3 text-right text-muted-foreground">In stock</th>
                 <th className="label-caps px-4 py-3 text-right text-muted-foreground">Actions</th>
@@ -90,23 +93,40 @@ export default async function InventoryPage() {
                     }`}
                   >
                     <td className="data-mono px-4 py-3 text-right text-muted-foreground">
-                      {product.serial}
+                      {serialLabel(product.serial)}
                     </td>
                     <td className="px-4 py-3">
-                      <p className="text-sm font-medium">
-                        {product.name}
-                        {!product.isActive && (
-                          <span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                            Hidden
+                      <div className="flex items-center gap-3">
+                        {product.photoUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={product.photoUrl}
+                            alt={product.name}
+                            className="size-9 shrink-0 rounded object-cover"
+                          />
+                        ) : (
+                          <span
+                            aria-hidden="true"
+                            className="flex size-9 shrink-0 items-center justify-center rounded bg-secondary text-[11px] font-bold text-muted-foreground"
+                          >
+                            {serialLabel(product.serial)}
                           </span>
                         )}
-                      </p>
-                      {product.sku && (
-                        <p className="data-mono text-[12px] text-muted-foreground">{product.sku}</p>
-                      )}
+                        <p className="text-sm font-medium">
+                          {product.name}
+                          {!product.isActive && (
+                            <span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                              Hidden
+                            </span>
+                          )}
+                        </p>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
                       {product.category ?? "—"}
+                    </td>
+                    <td className="data-mono px-4 py-3 text-right text-muted-foreground">
+                      {formatMoneyPrecise(product.costPrice)}
                     </td>
                     <td className="data-mono px-4 py-3 text-right">
                       {formatMoneyPrecise(product.salePrice)}
@@ -126,7 +146,6 @@ export default async function InventoryPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        <ProductBarcodeButton product={product} />
                         <AdjustStockDialog product={product} />
                         <EditProductDialog product={product} />
                         <ToggleProductButton product={product} />

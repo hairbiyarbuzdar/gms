@@ -12,7 +12,15 @@ export default async function InvoicesPage() {
     db.product.findMany({
       where: { tenantId, isActive: true },
       orderBy: [{ category: "asc" }, { name: "asc" }],
-      select: { id: true, name: true, sku: true, category: true, salePrice: true, quantity: true },
+      select: {
+        id: true,
+        serial: true,
+        name: true,
+        category: true,
+        photoUrl: true,
+        salePrice: true,
+        quantity: true,
+      },
     }),
     db.member.findMany({
       where: { tenantId },

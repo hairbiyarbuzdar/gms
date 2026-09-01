@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { addMonths, format as formatDateFns } from "date-fns";
 import { Plus, TriangleAlert, X } from "lucide-react";
 import { DialogFooter } from "@/components/ui/dialog";
 import { formatMoney } from "@/lib/format";
@@ -27,6 +28,13 @@ export type MemberInitial = {
   photoUrl: string | null;
   extraIds: string[];
 };
+
+/** yyyy-mm-dd one month on from the given date string. */
+function oneMonthAfter(date: string): string {
+  const d = new Date(`${date}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return "";
+  return formatDateFns(addMonths(d, 1), "yyyy-MM-dd");
+}
 
 /** 3600212345678 -> 36002-1234567-8 */
 function formatCnic(digits: string): string {
@@ -84,6 +92,12 @@ export function MemberForm({
   );
 
   const [cnic, setCnic] = useState(initial?.cnic ?? "");
+  // Joining date drives the default renewal date (one month on) until the
+  // user overrides it. Add mode only.
+  const [joinDate, setJoinDate] = useState(initial?.joinDate ?? today);
+  const [renewalDate, setRenewalDate] = useState(() => oneMonthAfter(initial?.joinDate ?? today));
+  const [renewalTouched, setRenewalTouched] = useState(false);
+  const renewalValue = renewalTouched ? renewalDate : oneMonthAfter(joinDate);
   // In edit mode the existing headshot seeds the preview.
   const [photo, setPhoto] = useState<string | null>(initial?.photoUrl ?? null);
   const photoTouched = photo !== (initial?.photoUrl ?? null);
@@ -217,12 +231,42 @@ export function MemberForm({
             id="joinDate"
             name="joinDate"
             type="date"
-            defaultValue={initial?.joinDate ?? today}
+            value={joinDate}
+            onChange={(e) => setJoinDate(e.target.value)}
             max={today}
             className={inputClass}
           />
         </div>
       </div>
+
+      {!editing && (
+        <div className="flex flex-col">
+          <label htmlFor="renewalDate" className="label-caps mb-1 text-muted-foreground">
+            Renewal date
+          </label>
+          <input
+            id="renewalDate"
+            name="renewalDate"
+            type="date"
+            value={renewalValue}
+            onChange={(e) => {
+              setRenewalTouched(true);
+              setRenewalDate(e.target.value);
+            }}
+            min={joinDate}
+            aria-invalid={state.fieldErrors?.renewalDate ? true : undefined}
+            className={inputClass}
+          />
+          <p className="mt-1 text-[12px] text-muted-foreground">
+            Defaults to one month after joining. Editable.
+          </p>
+          {state.fieldErrors?.renewalDate && (
+            <p className="mt-1 text-[13px] text-destructive">
+              {state.fieldErrors.renewalDate}
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-col">
         <label htmlFor="email" className="label-caps mb-1 text-muted-foreground">

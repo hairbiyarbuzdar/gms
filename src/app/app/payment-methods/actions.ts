@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { tenantDb } from "@/lib/tenant-db";
+import { getMethodBalance } from "@/lib/payment-method-balance";
 
 const methodSchema = z.object({
   name: z.string().trim().min(1, "Name is required.").max(60),
@@ -186,6 +187,16 @@ export async function createTransfer(
   ]);
 
   if (!from || !to) return { error: "One of those methods is unavailable." };
+
+  // The source method cannot be overdrawn by a transfer.
+  const balance = await getMethodBalance(db, tenantId, fromMethodId);
+  if (amount > balance + 0.001) {
+    return {
+      fieldErrors: {
+        amount: `Not enough funds. ${balance.toFixed(2)} available to transfer.`,
+      },
+    };
+  }
 
   await db.paymentTransfer.create({
     data: { tenantId, fromMethodId, toMethodId, amount, note: note || null },

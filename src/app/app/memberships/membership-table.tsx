@@ -7,6 +7,7 @@ import type { MembershipRow, PackageOption } from "./data";
 import { StatusPill } from "./status-pill";
 import { RenewDialog } from "./renew-dialog";
 import { EditMemberDialog } from "./edit-member-dialog";
+import { MemberDetailsDialog } from "./member-details-dialog";
 import { PhotoViewer } from "./photo-viewer";
 import { BarcodeDialog, type BarcodeTarget } from "@/components/barcode-dialog";
 import type { ExtraOption, MemberInitial } from "./member-form";
@@ -57,6 +58,7 @@ export function MembershipTable({
 }) {
   const [renewing, setRenewing] = useState<MembershipRow | null>(null);
   const [editing, setEditing] = useState<MembershipRow | null>(null);
+  const [viewing, setViewing] = useState<MembershipRow | null>(null);
   const [showingBarcode, setShowingBarcode] = useState<BarcodeTarget | null>(null);
   const [viewingPhoto, setViewingPhoto] = useState<{ url: string; name: string } | null>(null);
   const canRenew = paymentMethods.length > 0;
@@ -105,7 +107,13 @@ export function MembershipTable({
                       </span>
                     )}
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{row.memberName}</p>
+                      <button
+                        type="button"
+                        onClick={() => setViewing(row)}
+                        className="block max-w-full truncate text-left text-sm font-medium text-foreground transition-colors hover:text-primary hover:underline"
+                      >
+                        {row.memberName}
+                      </button>
                       <p className="data-mono truncate text-[12px] text-muted-foreground">
                         {row.memberBarcode}
                       </p>
@@ -213,6 +221,15 @@ export function MembershipTable({
           initial={toInitial(editing)}
           open={true}
           onOpenChange={(open) => !open && setEditing(null)}
+        />
+      )}
+
+      {viewing && (
+        <MemberDetailsDialog
+          key={viewing.id}
+          row={viewing}
+          open={true}
+          onOpenChange={(open) => !open && setViewing(null)}
         />
       )}
     </>
