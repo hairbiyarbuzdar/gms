@@ -31,10 +31,11 @@ function SaveButton({ label }: { label: string }) {
   );
 }
 
-/**
- * Retire / restore. The button is a separate component so useFormStatus reads
- * this form's state - called in the parent it would report the parent's.
- */
+/** First error across the three fields, so one line covers the form. */
+function firstError(state: PackageState) {
+  return state.fieldErrors?.name || state.fieldErrors?.price || state.fieldErrors?.whatsIncluded;
+}
+
 function ToggleSubmit({ isActive, name }: { isActive: boolean; name: string }) {
   const { pending } = useFormStatus();
 
@@ -78,6 +79,7 @@ function EditRow({ pkg, onDone }: { pkg: PackageRow; onDone: () => void }) {
   return (
     <form action={action} className="flex flex-col gap-2 p-3">
       <input type="hidden" name="id" value={pkg.id} />
+
       <div className="flex flex-wrap items-start gap-2">
         <input
           name="name"
@@ -93,19 +95,21 @@ function EditRow({ pkg, onDone }: { pkg: PackageRow; onDone: () => void }) {
           min="0"
           defaultValue={pkg.price}
           required
-          aria-label="Amount"
+          aria-label="Fee"
           className={`${inputClass} w-28`}
         />
-        <input
-          name="durationMonths"
-          type="number"
-          min="1"
-          max="60"
-          defaultValue={pkg.durationMonths}
-          required
-          aria-label="Duration in months"
-          className={`${inputClass} w-20`}
-        />
+      </div>
+
+      <textarea
+        name="whatsIncluded"
+        rows={2}
+        defaultValue={pkg.whatsIncluded ?? ""}
+        placeholder="What's included…"
+        aria-label="What's included"
+        className={inputClass}
+      />
+
+      <div className="flex items-center gap-2">
         <SaveButton label="Save" />
         <button
           type="button"
@@ -115,11 +119,8 @@ function EditRow({ pkg, onDone }: { pkg: PackageRow; onDone: () => void }) {
           Cancel
         </button>
       </div>
-      {(state.fieldErrors?.name || state.fieldErrors?.price || state.fieldErrors?.durationMonths) && (
-        <p className="text-[13px] text-destructive">
-          {state.fieldErrors.name || state.fieldErrors.price || state.fieldErrors.durationMonths}
-        </p>
-      )}
+
+      {firstError(state) && <p className="text-[13px] text-destructive">{firstError(state)}</p>}
     </form>
   );
 }
@@ -147,7 +148,7 @@ export function PackagesDialog({ packages }: { packages: PackageRow[] }) {
         <DialogHeader>
           <DialogTitle>Packages</DialogTitle>
           <DialogDescription>
-            Membership plans and their monthly amount. These appear when adding a member.
+            Membership plans and their monthly fee. These appear when adding a member.
           </DialogDescription>
         </DialogHeader>
 
@@ -167,9 +168,9 @@ export function PackagesDialog({ packages }: { packages: PackageRow[] }) {
                 className={inputClass}
               />
             </div>
-            <div className="w-28">
+            <div className="w-32">
               <label htmlFor="pkg-price" className="label-caps mb-1 block text-muted-foreground">
-                Amount
+                Fee (PKR)
               </label>
               <input
                 id="pkg-price"
@@ -183,36 +184,32 @@ export function PackagesDialog({ packages }: { packages: PackageRow[] }) {
                 className={inputClass}
               />
             </div>
-            <div className="w-20">
-              <label htmlFor="pkg-months" className="label-caps mb-1 block text-muted-foreground">
-                Months
-              </label>
-              <input
-                id="pkg-months"
-                name="durationMonths"
-                type="number"
-                min="1"
-                max="60"
-                required
-                defaultValue={1}
-                aria-invalid={state.fieldErrors?.durationMonths ? true : undefined}
-                className={inputClass}
-              />
-            </div>
-            <div className="self-end">
-              <SaveButton label="Add" />
-            </div>
           </div>
 
-          {(state.fieldErrors?.name ||
-            state.fieldErrors?.price ||
-            state.fieldErrors?.durationMonths) && (
-            <p className="text-[13px] text-destructive">
-              {state.fieldErrors.name ||
-                state.fieldErrors.price ||
-                state.fieldErrors.durationMonths}
-            </p>
-          )}
+          <div>
+            <label
+              htmlFor="pkg-included"
+              className="label-caps mb-1 block text-muted-foreground"
+            >
+              What&rsquo;s included{" "}
+              <span className="font-normal normal-case tracking-normal">(optional)</span>
+            </label>
+            <textarea
+              id="pkg-included"
+              name="whatsIncluded"
+              rows={2}
+              placeholder="Gym floor, group classes, one guest pass a month…"
+              aria-invalid={state.fieldErrors?.whatsIncluded ? true : undefined}
+              className={inputClass}
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <SaveButton label="Add package" />
+            {firstError(state) && (
+              <p className="text-[13px] text-destructive">{firstError(state)}</p>
+            )}
+          </div>
         </form>
 
         {/* List */}
@@ -231,7 +228,7 @@ export function PackagesDialog({ packages }: { packages: PackageRow[] }) {
                 ) : (
                   <li
                     key={pkg.id}
-                    className={`flex items-center gap-3 px-4 py-3 ${
+                    className={`flex items-start gap-3 px-4 py-3 ${
                       pkg.isActive ? "" : "opacity-60"
                     }`}
                   >
@@ -244,13 +241,16 @@ export function PackagesDialog({ packages }: { packages: PackageRow[] }) {
                           </span>
                         )}
                       </p>
-                      <p className="text-[12px] text-muted-foreground">
-                        {pkg.durationMonths === 1
-                          ? "1 month"
-                          : `${pkg.durationMonths} months`}
-                        {pkg.memberCount > 0 &&
-                          ` · ${pkg.memberCount} member${pkg.memberCount === 1 ? "" : "s"}`}
-                      </p>
+                      {pkg.whatsIncluded && (
+                        <p className="mt-0.5 text-[13px] leading-[18px] text-muted-foreground">
+                          {pkg.whatsIncluded}
+                        </p>
+                      )}
+                      {pkg.memberCount > 0 && (
+                        <p className="mt-0.5 text-[12px] text-muted-foreground">
+                          {pkg.memberCount} member{pkg.memberCount === 1 ? "" : "s"}
+                        </p>
+                      )}
                     </div>
 
                     <p className="data-mono shrink-0 text-sm font-medium">

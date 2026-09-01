@@ -15,7 +15,7 @@ function flatten(error: { flatten(): { fieldErrors: Record<string, string[] | un
   return {
     name: f.name?.[0] ?? "",
     price: f.price?.[0] ?? "",
-    durationMonths: f.durationMonths?.[0] ?? "",
+    whatsIncluded: f.whatsIncluded?.[0] ?? "",
   };
 }
 
@@ -29,12 +29,12 @@ export async function createPackage(
   const parsed = createPackageSchema.safeParse({
     name: formData.get("name"),
     price: formData.get("price"),
-    durationMonths: formData.get("durationMonths"),
+    whatsIncluded: formData.get("whatsIncluded"),
   });
 
   if (!parsed.success) return { fieldErrors: flatten(parsed.error) };
 
-  const { name, price, durationMonths } = parsed.data;
+  const { name, price, whatsIncluded, durationMonths } = parsed.data;
 
   // Package names are unique per tenant, so give a clear message rather than
   // letting the constraint surface as a 500.
@@ -48,7 +48,14 @@ export async function createPackage(
   }
 
   await db.package.create({
-    data: { tenantId, name, price, durationMonths, isActive: true },
+    data: {
+      tenantId,
+      name,
+      price,
+      whatsIncluded: whatsIncluded || null,
+      durationMonths,
+      isActive: true,
+    },
   });
 
   revalidatePath("/app/memberships");
@@ -66,12 +73,12 @@ export async function updatePackage(
     id: formData.get("id"),
     name: formData.get("name"),
     price: formData.get("price"),
-    durationMonths: formData.get("durationMonths"),
+    whatsIncluded: formData.get("whatsIncluded"),
   });
 
   if (!parsed.success) return { fieldErrors: flatten(parsed.error) };
 
-  const { id, name, price, durationMonths } = parsed.data;
+  const { id, name, price, whatsIncluded } = parsed.data;
 
   // The id came from the client, so confirm it belongs to this tenant.
   const existing = await db.package.findFirst({
@@ -92,7 +99,7 @@ export async function updatePackage(
 
   await db.package.update({
     where: { id },
-    data: { name, price, durationMonths },
+    data: { name, price, whatsIncluded: whatsIncluded || null },
   });
 
   revalidatePath("/app/memberships");

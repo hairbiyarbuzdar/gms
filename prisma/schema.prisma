@@ -51,6 +51,7 @@ model Tenant {
   expenseCategories ExpenseCategory[]
   paymentMethods   PaymentMethod[]
   paymentTransfers PaymentTransfer[]
+  extras           Extra[]
 
   @@index([status])
   @@index([createdById])
@@ -119,8 +120,8 @@ enum UserStatus {
 //
 // Every model below is tenant-scoped: it carries tenantId, and every query
 // must filter on it (see src/lib/tenant-db.ts). Money is Decimal(12,2), never
-// Float. There is no cost price anywhere - products carry a sale price only,
-// and purchase invoices never write back to a product (decision D-8).
+// Float. Products carry a cost price and a sale price; a purchase invoice can
+// update both when it is posted.
 // ---------------------------------------------------------------------------
 
 /// A membership plan offered by the location (FR-14).
@@ -130,9 +131,13 @@ model Package {
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   name String
-  /// Length in months. Renewals are monthly regardless (FR-16).
+  /// Length in months. Kept for reference; renewals are monthly regardless
+  /// (FR-16). Not shown in the package form.
   durationMonths Int     @default(1)
+  /// The monthly fee. Recorded as the payment amount on each renewal.
   price          Decimal @db.Decimal(12, 2)
+  /// Free-text list of what the membership includes (classes, guest passes...).
+  whatsIncluded  String?
   isActive       Boolean @default(true)
 
   createdAt DateTime @default(now())
@@ -142,6 +147,48 @@ model Package {
 
   @@unique([tenantId, name])
   @@index([tenantId, isActive])
+}
+
+/// A paid add-on a member can take alongside their package - a locker, towel
+/// service, personal training. Charged monthly on top of the package fee.
+model Extra {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name     String
+  /// Monthly fee, added to the member's renewal amount.
+  fee      Decimal @db.Decimal(12, 2)
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  membershipExtras MembershipExtra[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, isActive])
+}
+
+/// Links a membership to an extra it pays for. The fee is snapshotted so a
+/// later price change does not rewrite what a member was charged.
+model MembershipExtra {
+  id       String @id @default(cuid())
+  tenantId String
+
+  membershipId String
+  membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  extraId String
+  extra   Extra  @relation(fields: [extraId], references: [id])
+
+  /// The extra's fee at the time it was added to this membership.
+  fee Decimal @db.Decimal(12, 2)
+
+  createdAt DateTime @default(now())
+
+  @@unique([membershipId, extraId])
+  @@index([tenantId])
 }
 
 /// A gym customer. Never a login user.
@@ -154,6 +201,9 @@ model Member {
   name    String
   phone   String
   email   String?
+  /// 13-digit CNIC, stored digits-only. Optional.
+  cnic     String?
+  /// Path to the member's headshot under /uploads, e.g. /uploads/members/x.jpg.
   photoUrl String?
   joinDate DateTime @default(now())
 
@@ -194,6 +244,7 @@ model Membership {
   updatedAt DateTime @updatedAt
 
   renewalPayments RenewalPayment[]
+  extras          MembershipExtra[]
 
   @@index([tenantId, status])
   @@index([tenantId, nextRenewalDate])
@@ -223,7 +274,7 @@ model RenewalPayment {
   @@index([membershipId])
 }
 
-/// A retail product sold at the front desk (FR-24). No cost price.
+/// A retail product sold at the front desk (FR-24).
 model Product {
   id       String @id @default(cuid())
   tenantId String
@@ -235,8 +286,12 @@ model Product {
   name     String
   sku      String?
   category String?
-  /// The only price a product carries (decision D-8).
+  /// What a unit is sold for. Updated by a purchase invoice when a new sale
+  /// price is entered there.
   salePrice    Decimal @db.Decimal(12, 2)
+  /// Last known unit cost, set from the most recent purchase invoice line.
+  /// Kept for profit reporting; the app never uses it to price a sale.
+  costPrice    Decimal @default(0) @db.Decimal(12, 2)
   quantity     Int     @default(0)
   reorderLevel Int     @default(0)
   isActive     Boolean @default(true)
@@ -343,8 +398,8 @@ model Supplier {
   @@index([tenantId, name])
 }
 
-/// Stock received from a supplier (FR-34). Increases quantity only - it never
-/// updates a product's price (FR-35, decision D-8).
+/// Stock received from a supplier (FR-34). Posting it increases quantity on
+/// hand and updates each product's cost and sale price from the line.
 model PurchaseInvoice {
   id       String @id @default(cuid())
   tenantId String
@@ -379,8 +434,11 @@ model PurchaseInvoiceLine {
   product   Product @relation(fields: [productId], references: [id])
 
   quantity Int
-  /// What the supplier charged for this line. Never written back to Product.
-  lineAmount Decimal @db.Decimal(12, 2)
+  /// Unit cost the supplier charged. quantity * unitCost is the line total.
+  unitCost Decimal @db.Decimal(12, 2)
+  /// The sale price entered for this product on this invoice. Written to
+  /// Product.salePrice when the invoice is posted.
+  unitSalePrice Decimal @db.Decimal(12, 2)
 
   @@index([purchaseInvoiceId])
   @@index([tenantId])

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { addMonths } from "date-fns";
 import { tenantDb } from "@/lib/tenant-db";
 import { createMembershipSchema, renewMembershipSchema } from "@/lib/validators/membership";
+import { saveMemberPhoto } from "@/lib/member-photo";
 
 export type ActionState = {
   ok?: boolean;
@@ -44,7 +45,10 @@ export async function createMembership(
     name: formData.get("name"),
     phone: formData.get("phone"),
     email: formData.get("email"),
+    cnic: formData.get("cnic"),
+    joinDate: formData.get("joinDate"),
     packageId: formData.get("packageId"),
+    photo: formData.get("photo"),
   });
 
   if (!parsed.success) {
@@ -54,12 +58,13 @@ export async function createMembership(
         name: f.name?.[0] ?? "",
         phone: f.phone?.[0] ?? "",
         email: f.email?.[0] ?? "",
+        cnic: f.cnic?.[0] ?? "",
         packageId: f.packageId?.[0] ?? "",
       },
     };
   }
 
-  const { name, phone, email, packageId } = parsed.data;
+  const { name, phone, email, cnic, joinDate, packageId, photo } = parsed.data;
 
   // Re-check the package belongs to this tenant: the id came from the client.
   const pkg = await db.package.findFirst({
@@ -71,8 +76,22 @@ export async function createMembership(
     return { fieldErrors: { packageId: "That package is not available." } };
   }
 
+  // Store the webcam capture before opening the transaction - a slow disk
+  // write should not hold a DB transaction open.
+  let photoUrl: string | null = null;
+  if (photo && photo.startsWith("data:image/")) {
+    try {
+      photoUrl = await saveMemberPhoto(photo);
+    } catch (error) {
+      return {
+        fieldErrors: { name: error instanceof Error ? error.message : "Photo could not be saved." },
+      };
+    }
+  }
+
   const barcode = await generateBarcode(db, tenantId);
   const now = new Date();
+  const joined = joinDate ? new Date(joinDate) : now;
 
   await db.$transaction(async (tx) => {
     const member = await tx.member.create({
@@ -81,8 +100,10 @@ export async function createMembership(
         name,
         phone,
         email: email || null,
+        cnic: cnic || null,
+        photoUrl,
         barcode,
-        joinDate: now,
+        joinDate: joined,
       },
     });
 
@@ -91,9 +112,9 @@ export async function createMembership(
         tenantId,
         memberId: member.id,
         packageId,
-        startDate: now,
+        startDate: joined,
         // First renewal falls due one month after joining (FR-16).
-        nextRenewalDate: addMonths(now, 1),
+        nextRenewalDate: addMonths(joined, 1),
         status: "ACTIVE",
       },
     });

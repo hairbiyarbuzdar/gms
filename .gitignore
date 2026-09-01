@@ -47,3 +47,6 @@ next-env.d.ts
 # pm2 logs
 /logs
 
+
+# Member photos - local dev writes here; VPS uses UPLOAD_DIR outside the repo
+/uploads/

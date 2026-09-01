@@ -11,12 +11,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { formatMoney } from "@/lib/format";
 import { renewMembership, type ActionState } from "./actions";
 
 const inputClass =
   "w-full rounded border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary aria-invalid:border-destructive";
 
 type PaymentMethod = { id: string; name: string };
+type Extra = { id: string; name: string; fee: string };
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -34,14 +36,16 @@ function SubmitButton() {
 export function RenewDialog({
   membershipId,
   memberName,
-  defaultAmount,
+  packageFee,
+  extras,
   paymentMethods,
   open,
   onOpenChange,
 }: {
   membershipId: string;
   memberName: string;
-  defaultAmount: string;
+  packageFee: string;
+  extras: Extra[];
   paymentMethods: PaymentMethod[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -54,6 +58,11 @@ export function RenewDialog({
 
   // The schedule moves to one month from today, not from the old due date.
   const nextDue = addMonths(new Date(), 1);
+
+  // Prefill the amount with package fee + every extra. The operator can still
+  // adjust it before recording.
+  const extrasTotal = extras.reduce((sum, x) => sum + Number(x.fee), 0);
+  const defaultAmount = String(Number(packageFee) + extrasTotal);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -73,6 +82,25 @@ export function RenewDialog({
             >
               {state.error}
             </div>
+          )}
+
+          {extras.length > 0 && (
+            <dl className="rounded border border-border bg-secondary/50 px-3 py-2.5 text-[13px]">
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Package fee</dt>
+                <dd className="data-mono">{formatMoney(packageFee)}</dd>
+              </div>
+              {extras.map((x) => (
+                <div key={x.id} className="flex justify-between">
+                  <dt className="text-muted-foreground">{x.name}</dt>
+                  <dd className="data-mono">{formatMoney(x.fee)}</dd>
+                </div>
+              ))}
+              <div className="mt-1 flex justify-between border-t border-border pt-1 font-medium">
+                <dt>Total</dt>
+                <dd className="data-mono">{formatMoney(defaultAmount)}</dd>
+              </div>
+            </dl>
           )}
 
           <div className="flex flex-col">

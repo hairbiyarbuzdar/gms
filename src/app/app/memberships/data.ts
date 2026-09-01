@@ -68,8 +68,14 @@ export type MembershipRow = {
   memberName: string;
   memberBarcode: string;
   memberPhone: string;
+  memberCnic: string | null;
+  memberPhotoUrl: string | null;
   packageName: string;
   packagePrice: string;
+  /** Extras this membership carries, with the fee it pays for each. */
+  extras: { id: string; name: string; fee: string }[];
+  /** Sum of the extra fees. */
+  extrasTotal: string;
   joinDate: Date;
   nextRenewalDate: Date;
   status: "ACTIVE" | "DUE" | "EXPIRED" | "CANCELLED";
@@ -124,8 +130,20 @@ export async function getMemberships({
         id: true,
         nextRenewalDate: true,
         status: true,
-        member: { select: { name: true, barcode: true, phone: true, joinDate: true } },
+        member: {
+          select: {
+            name: true,
+            barcode: true,
+            phone: true,
+            cnic: true,
+            photoUrl: true,
+            joinDate: true,
+          },
+        },
         package: { select: { name: true, price: true } },
+        extras: {
+          select: { id: true, fee: true, extra: { select: { name: true } } },
+        },
       },
     }),
     db.membership.count({ where: tabFilter("active", tenantId, now) }),
@@ -139,8 +157,18 @@ export async function getMemberships({
       memberName: r.member.name,
       memberBarcode: r.member.barcode,
       memberPhone: r.member.phone,
+      memberCnic: r.member.cnic,
+      memberPhotoUrl: r.member.photoUrl,
       packageName: r.package.name,
       packagePrice: r.package.price.toString(),
+      extras: r.extras.map((x) => ({
+        id: x.id,
+        name: x.extra.name,
+        fee: x.fee.toString(),
+      })),
+      extrasTotal: r.extras
+        .reduce((sum, x) => sum + Number(x.fee.toString()), 0)
+        .toString(),
       joinDate: r.member.joinDate,
       nextRenewalDate: r.nextRenewalDate,
       status: r.status,
@@ -180,9 +208,56 @@ export async function getActivePackages(): Promise<PackageOption[]> {
 
 export type PackageRow = PackageOption & {
   isActive: boolean;
+  /** What the membership includes - shown in the Packages dialog only. */
+  whatsIncluded: string | null;
   /** How many memberships currently use this package. */
   memberCount: number;
 };
+
+export type ExtraRow = {
+  id: string;
+  name: string;
+  fee: string;
+  isActive: boolean;
+  /** How many memberships currently carry this extra. */
+  memberCount: number;
+};
+
+/** Every extra, active or retired, with its member count. */
+export async function getAllExtras(): Promise<ExtraRow[]> {
+  const { db, tenantId } = await tenantDb();
+
+  const extras = await db.extra.findMany({
+    where: { tenantId },
+    orderBy: [{ isActive: "desc" }, { name: "asc" }],
+    select: {
+      id: true,
+      name: true,
+      fee: true,
+      isActive: true,
+      _count: { select: { membershipExtras: true } },
+    },
+  });
+
+  return extras.map((e) => ({
+    id: e.id,
+    name: e.name,
+    fee: e.fee.toString(),
+    isActive: e.isActive,
+    memberCount: e._count.membershipExtras,
+  }));
+}
+
+/** Active extras, for assigning to a member. */
+export async function getActiveExtras() {
+  const { db, tenantId } = await tenantDb();
+  const extras = await db.extra.findMany({
+    where: { tenantId, isActive: true },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, fee: true },
+  });
+  return extras.map((e) => ({ id: e.id, name: e.name, fee: e.fee.toString() }));
+}
 
 /** Every package, active or retired, with its member count. */
 export async function getAllPackages(): Promise<PackageRow[]> {
@@ -196,6 +271,7 @@ export async function getAllPackages(): Promise<PackageRow[]> {
       name: true,
       price: true,
       durationMonths: true,
+      whatsIncluded: true,
       isActive: true,
       _count: { select: { memberships: true } },
     },
@@ -206,6 +282,7 @@ export async function getAllPackages(): Promise<PackageRow[]> {
     name: p.name,
     price: p.price.toString(),
     durationMonths: p.durationMonths,
+    whatsIncluded: p.whatsIncluded,
     isActive: p.isActive,
     memberCount: p._count.memberships,
   }));

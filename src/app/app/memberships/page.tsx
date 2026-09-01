@@ -3,9 +3,10 @@ import { ChevronLeft, ChevronRight, Users } from "lucide-react";
 import { getTenantContext } from "@/lib/tenant-context";
 import { tenantDb } from "@/lib/tenant-db";
 import { PageHeader } from "@/components/page-header";
-import { getAllPackages, getMemberships, parseTab, PAGE_SIZE } from "./data";
+import { getAllExtras, getActiveExtras, getAllPackages, getMemberships, parseTab, PAGE_SIZE } from "./data";
 import { AddMemberDialog } from "./add-member-dialog";
 import { PackagesDialog } from "./packages-dialog";
+import { ExtrasDialog } from "./extras-dialog";
 import { MembershipTable } from "./membership-table";
 import { SearchBox } from "./search-box";
 
@@ -31,9 +32,11 @@ export default async function MembershipsPage({
 
   const { db, tenantId } = await tenantDb();
 
-  const [list, packages, paymentMethods] = await Promise.all([
+  const [list, packages, extras, activeExtras, paymentMethods] = await Promise.all([
     getMemberships({ tab, query, page }),
     getAllPackages(),
+    getAllExtras(),
+    getActiveExtras(),
     db.paymentMethod.findMany({
       where: { tenantId, isActive: true },
       orderBy: { name: "asc" },
@@ -64,6 +67,7 @@ export default async function MembershipsPage({
         action={
           <div className="flex flex-wrap items-center gap-2">
             <PackagesDialog packages={packages} />
+            <ExtrasDialog extras={extras} />
             <AddMemberDialog packages={activePackages} />
           </div>
         }
@@ -145,7 +149,11 @@ export default async function MembershipsPage({
             </p>
           </div>
         ) : (
-          <MembershipTable rows={list.rows} paymentMethods={paymentMethods} />
+          <MembershipTable
+            rows={list.rows}
+            paymentMethods={paymentMethods}
+            availableExtras={activeExtras}
+          />
         )}
       </div>
 
