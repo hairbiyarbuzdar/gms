@@ -3,8 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { addMonths } from "date-fns";
 import { tenantDb } from "@/lib/tenant-db";
-import { createMembershipSchema, renewMembershipSchema } from "@/lib/validators/membership";
-import { saveMemberPhoto } from "@/lib/member-photo";
+import {
+  createMembershipSchema,
+  renewMembershipSchema,
+  updateMembershipSchema,
+} from "@/lib/validators/membership";
+import { deleteMemberPhoto, saveMemberPhoto } from "@/lib/member-photo";
 
 export type ActionState = {
   ok?: boolean;
@@ -49,6 +53,7 @@ export async function createMembership(
     joinDate: formData.get("joinDate"),
     packageId: formData.get("packageId"),
     photo: formData.get("photo"),
+    extraIds: formData.getAll("extraIds").map(String),
   });
 
   if (!parsed.success) {
@@ -64,7 +69,7 @@ export async function createMembership(
     };
   }
 
-  const { name, phone, email, cnic, joinDate, packageId, photo } = parsed.data;
+  const { name, phone, email, cnic, joinDate, packageId, photo, extraIds } = parsed.data;
 
   // Re-check the package belongs to this tenant: the id came from the client.
   const pkg = await db.package.findFirst({
@@ -75,6 +80,13 @@ export async function createMembership(
   if (!pkg) {
     return { fieldErrors: { packageId: "That package is not available." } };
   }
+
+  const chosenExtras = extraIds.length
+    ? await db.extra.findMany({
+        where: { id: { in: extraIds }, tenantId, isActive: true },
+        select: { id: true, fee: true },
+      })
+    : [];
 
   // Store the webcam capture before opening the transaction - a slow disk
   // write should not hold a DB transaction open.
@@ -107,7 +119,7 @@ export async function createMembership(
       },
     });
 
-    await tx.membership.create({
+    const membership = await tx.membership.create({
       data: {
         tenantId,
         memberId: member.id,
@@ -118,6 +130,18 @@ export async function createMembership(
         status: "ACTIVE",
       },
     });
+
+    if (chosenExtras.length) {
+      await tx.membershipExtra.createMany({
+        data: chosenExtras.map((e) => ({
+          tenantId,
+          membershipId: membership.id,
+          extraId: e.id,
+          // Snapshot the fee: a later price change never rewrites this.
+          fee: e.fee,
+        })),
+      });
+    }
   });
 
   revalidatePath("/app/memberships");
@@ -126,6 +150,131 @@ export async function createMembership(
     ok: true,
     created: { memberName: name, barcode, packageName: pkg.name },
   };
+}
+
+/**
+ * Edits an existing member and their membership.
+ *
+ * The photo field is a three-way switch: a data: URL replaces the headshot
+ * (and the old file is deleted), the literal "__remove__" clears it, and an
+ * empty string leaves the current one untouched.
+ *
+ * Extras are replaced wholesale from what the form submits - anything not in
+ * the list has been unticked. Kept extras snapshot the extra's current fee.
+ */
+export async function updateMembership(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const { db, tenantId } = await tenantDb();
+
+  const parsed = updateMembershipSchema.safeParse({
+    membershipId: formData.get("membershipId"),
+    name: formData.get("name"),
+    phone: formData.get("phone"),
+    email: formData.get("email"),
+    cnic: formData.get("cnic"),
+    joinDate: formData.get("joinDate"),
+    packageId: formData.get("packageId"),
+    photo: formData.get("photo"),
+    extraIds: formData.getAll("extraIds").map(String),
+  });
+
+  if (!parsed.success) {
+    const f = parsed.error.flatten().fieldErrors;
+    return {
+      fieldErrors: {
+        name: f.name?.[0] ?? "",
+        phone: f.phone?.[0] ?? "",
+        email: f.email?.[0] ?? "",
+        cnic: f.cnic?.[0] ?? "",
+        packageId: f.packageId?.[0] ?? "",
+      },
+    };
+  }
+
+  const { membershipId, name, phone, email, cnic, joinDate, packageId, photo, extraIds } =
+    parsed.data;
+
+  const membership = await db.membership.findFirst({
+    where: { id: membershipId, tenantId },
+    select: { id: true, memberId: true, member: { select: { photoUrl: true } } },
+  });
+  if (!membership) return { error: "Member not found." };
+
+  const pkg = await db.package.findFirst({
+    where: { id: packageId, tenantId },
+    select: { id: true },
+  });
+  if (!pkg) return { fieldErrors: { packageId: "That package is not available." } };
+
+  const chosenExtras = extraIds.length
+    ? await db.extra.findMany({
+        where: { id: { in: extraIds }, tenantId, isActive: true },
+        select: { id: true, fee: true },
+      })
+    : [];
+
+  // Resolve the photo change outside the transaction.
+  let photoUpdate: { photoUrl?: string | null } = {};
+  const oldPhoto = membership.member.photoUrl;
+  if (photo === "__remove__") {
+    photoUpdate = { photoUrl: null };
+  } else if (photo && photo.startsWith("data:image/")) {
+    try {
+      photoUpdate = { photoUrl: await saveMemberPhoto(photo) };
+    } catch (error) {
+      return {
+        fieldErrors: {
+          name: error instanceof Error ? error.message : "Photo could not be saved.",
+        },
+      };
+    }
+  }
+
+  const joined = joinDate ? new Date(joinDate) : undefined;
+
+  await db.$transaction(async (tx) => {
+    await tx.member.update({
+      where: { id: membership.memberId },
+      data: {
+        name,
+        phone,
+        email: email || null,
+        cnic: cnic || null,
+        ...photoUpdate,
+        ...(joined ? { joinDate: joined } : {}),
+      },
+    });
+
+    // Package can change; the renewal schedule is not touched here.
+    await tx.membership.update({
+      where: { id: membership.id },
+      data: { packageId },
+    });
+
+    // Replace the extras set.
+    await tx.membershipExtra.deleteMany({ where: { membershipId: membership.id, tenantId } });
+    if (chosenExtras.length) {
+      await tx.membershipExtra.createMany({
+        data: chosenExtras.map((e) => ({
+          tenantId,
+          membershipId: membership.id,
+          extraId: e.id,
+          fee: e.fee,
+        })),
+      });
+    }
+  });
+
+  // Old file removed only after the row no longer points at it.
+  if ((photo === "__remove__" || photo?.startsWith("data:image/")) && oldPhoto) {
+    await deleteMemberPhoto(oldPhoto);
+  }
+
+  revalidatePath("/app/memberships");
+  revalidatePath("/app");
+  return { ok: true };
 }
 
 /**

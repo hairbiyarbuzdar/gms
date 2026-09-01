@@ -44,8 +44,16 @@ export default async function MembershipsPage({
     }),
   ]);
 
-  // Only active packages can be assigned to a new member.
+  // Active packages, for assigning to new members.
   const activePackages = packages.filter((p) => p.isActive);
+
+  // The edit form also needs any package a currently-listed member sits on,
+  // even if it was retired since they joined.
+  const usedPackageIds = new Set(list.rows.map((r) => r.packageId));
+  const editablePackages = [
+    ...activePackages,
+    ...packages.filter((p) => !p.isActive && usedPackageIds.has(p.id)),
+  ];
 
   const from = list.total === 0 ? 0 : (list.page - 1) * PAGE_SIZE + 1;
   const to = Math.min(list.page * PAGE_SIZE, list.total);
@@ -68,7 +76,7 @@ export default async function MembershipsPage({
           <div className="flex flex-wrap items-center gap-2">
             <PackagesDialog packages={packages} />
             <ExtrasDialog extras={extras} />
-            <AddMemberDialog packages={activePackages} />
+            <AddMemberDialog packages={activePackages} extras={activeExtras} />
           </div>
         }
       />
@@ -152,7 +160,8 @@ export default async function MembershipsPage({
           <MembershipTable
             rows={list.rows}
             paymentMethods={paymentMethods}
-            availableExtras={activeExtras}
+            packages={editablePackages}
+            extras={activeExtras}
           />
         )}
       </div>

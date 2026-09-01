@@ -1,16 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Barcode, Sparkles } from "lucide-react";
+import { Barcode, Pencil } from "lucide-react";
 import { formatDate, formatMoney } from "@/lib/format";
-import type { MembershipRow } from "./data";
+import type { MembershipRow, PackageOption } from "./data";
 import { StatusPill } from "./status-pill";
 import { RenewDialog } from "./renew-dialog";
-import { ManageMemberExtrasDialog } from "./manage-member-extras-dialog";
+import { EditMemberDialog } from "./edit-member-dialog";
+import { PhotoViewer } from "./photo-viewer";
 import { BarcodeDialog, type BarcodeTarget } from "@/components/barcode-dialog";
+import type { ExtraOption, MemberInitial } from "./member-form";
 
 type PaymentMethod = { id: string; name: string };
-type AvailableExtra = { id: string; name: string; fee: string };
 
 function initials(name: string) {
   return name
@@ -20,18 +21,44 @@ function initials(name: string) {
     .join("");
 }
 
+function formatCnic(digits: string | null): string | null {
+  if (!digits) return null;
+  return digits.length === 13
+    ? `${digits.slice(0, 5)}-${digits.slice(5, 12)}-${digits.slice(12)}`
+    : digits;
+}
+
+/** Turns a row into the shape the edit form seeds from. */
+function toInitial(row: MembershipRow): MemberInitial {
+  return {
+    membershipId: row.id,
+    name: row.memberName,
+    phone: row.memberPhone,
+    cnic: row.memberCnic,
+    email: row.memberEmail,
+    joinDate: row.joinDate.toISOString().slice(0, 10),
+    packageId: row.packageId,
+    photoUrl: row.memberPhotoUrl,
+    extraIds: row.extraIds,
+  };
+}
+
 export function MembershipTable({
   rows,
   paymentMethods,
-  availableExtras,
+  packages,
+  extras,
 }: {
   rows: MembershipRow[];
   paymentMethods: PaymentMethod[];
-  availableExtras: AvailableExtra[];
+  /** Every active package plus, for editing, whatever a member is currently on. */
+  packages: PackageOption[];
+  extras: ExtraOption[];
 }) {
   const [renewing, setRenewing] = useState<MembershipRow | null>(null);
-  const [managingExtras, setManagingExtras] = useState<MembershipRow | null>(null);
+  const [editing, setEditing] = useState<MembershipRow | null>(null);
   const [showingBarcode, setShowingBarcode] = useState<BarcodeTarget | null>(null);
+  const [viewingPhoto, setViewingPhoto] = useState<{ url: string; name: string } | null>(null);
   const canRenew = paymentMethods.length > 0;
 
   return (
@@ -54,12 +81,21 @@ export function MembershipTable({
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     {row.memberPhotoUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={row.memberPhotoUrl}
-                        alt={row.memberName}
-                        className="size-9 shrink-0 rounded object-cover"
-                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setViewingPhoto({ url: row.memberPhotoUrl!, name: row.memberName })
+                        }
+                        className="shrink-0 rounded ring-offset-2 transition hover:ring-2 hover:ring-primary"
+                        title="View photo"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={row.memberPhotoUrl}
+                          alt={row.memberName}
+                          className="size-9 rounded object-cover"
+                        />
+                      </button>
                     ) : (
                       <span
                         aria-hidden="true"
@@ -75,9 +111,7 @@ export function MembershipTable({
                       </p>
                       {row.memberCnic && (
                         <p className="data-mono truncate text-[11px] text-muted-foreground">
-                          {row.memberCnic.length === 13
-                            ? `${row.memberCnic.slice(0, 5)}-${row.memberCnic.slice(5, 12)}-${row.memberCnic.slice(12)}`
-                            : row.memberCnic}
+                          {formatCnic(row.memberCnic)}
                         </p>
                       )}
                     </div>
@@ -121,12 +155,12 @@ export function MembershipTable({
                     </button>
                     <button
                       type="button"
-                      onClick={() => setManagingExtras(row)}
-                      title="Manage extras"
+                      onClick={() => setEditing(row)}
+                      title="Edit member"
                       className="rounded border border-border p-1.5 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
                     >
-                      <Sparkles className="size-4" aria-hidden="true" />
-                      <span className="sr-only">Manage extras for {row.memberName}</span>
+                      <Pencil className="size-4" aria-hidden="true" />
+                      <span className="sr-only">Edit {row.memberName}</span>
                     </button>
                     <button
                       type="button"
@@ -153,6 +187,11 @@ export function MembershipTable({
         description="Scan this code to look the member up at renewal time."
       />
 
+      <PhotoViewer
+        photo={viewingPhoto}
+        onClose={() => setViewingPhoto(null)}
+      />
+
       {renewing && (
         <RenewDialog
           key={renewing.id}
@@ -166,15 +205,14 @@ export function MembershipTable({
         />
       )}
 
-      {managingExtras && (
-        <ManageMemberExtrasDialog
-          key={managingExtras.id}
-          membershipId={managingExtras.id}
-          memberName={managingExtras.memberName}
-          available={availableExtras}
-          currentExtraNames={managingExtras.extras.map((x) => x.name)}
+      {editing && (
+        <EditMemberDialog
+          key={editing.id}
+          packages={packages}
+          extras={extras}
+          initial={toInitial(editing)}
           open={true}
-          onOpenChange={(open) => !open && setManagingExtras(null)}
+          onOpenChange={(open) => !open && setEditing(null)}
         />
       )}
     </>

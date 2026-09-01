@@ -69,13 +69,17 @@ export type MembershipRow = {
   memberBarcode: string;
   memberPhone: string;
   memberCnic: string | null;
+  memberEmail: string | null;
   memberPhotoUrl: string | null;
+  packageId: string;
   packageName: string;
   packagePrice: string;
   /** Extras this membership carries, with the fee it pays for each. */
   extras: { id: string; name: string; fee: string }[];
   /** Sum of the extra fees. */
   extrasTotal: string;
+  /** For seeding the edit form's extras picker. */
+  extraIds: string[];
   joinDate: Date;
   nextRenewalDate: Date;
   status: "ACTIVE" | "DUE" | "EXPIRED" | "CANCELLED";
@@ -136,13 +140,19 @@ export async function getMemberships({
             barcode: true,
             phone: true,
             cnic: true,
+            email: true,
             photoUrl: true,
             joinDate: true,
           },
         },
-        package: { select: { name: true, price: true } },
+        package: { select: { id: true, name: true, price: true } },
         extras: {
-          select: { id: true, fee: true, extra: { select: { name: true } } },
+          select: {
+            id: true,
+            fee: true,
+            extraId: true,
+            extra: { select: { name: true } },
+          },
         },
       },
     }),
@@ -158,7 +168,9 @@ export async function getMemberships({
       memberBarcode: r.member.barcode,
       memberPhone: r.member.phone,
       memberCnic: r.member.cnic,
+      memberEmail: r.member.email,
       memberPhotoUrl: r.member.photoUrl,
+      packageId: r.package.id,
       packageName: r.package.name,
       packagePrice: r.package.price.toString(),
       extras: r.extras.map((x) => ({
@@ -169,6 +181,7 @@ export async function getMemberships({
       extrasTotal: r.extras
         .reduce((sum, x) => sum + Number(x.fee.toString()), 0)
         .toString(),
+      extraIds: r.extras.map((x) => x.extraId),
       joinDate: r.member.joinDate,
       nextRenewalDate: r.nextRenewalDate,
       status: r.status,

@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 
@@ -43,4 +43,21 @@ export async function saveMemberPhoto(dataUrl: string): Promise<string> {
   await writeFile(path.join(MEMBERS_DIR, filename), buffer);
 
   return `/uploads/members/${filename}`;
+}
+
+/**
+ * Removes an old headshot file when it is replaced or the member is deleted.
+ * Only touches files inside the members directory; a bad path is ignored.
+ */
+export async function deleteMemberPhoto(photoUrl: string | null | undefined): Promise<void> {
+  if (!photoUrl) return;
+
+  const name = photoUrl.split("/").pop();
+  if (!name || name.includes("..") || name.includes("/")) return;
+
+  try {
+    await unlink(path.join(MEMBERS_DIR, name));
+  } catch {
+    // Already gone, or never existed - nothing to do.
+  }
 }

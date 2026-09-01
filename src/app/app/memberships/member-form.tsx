@@ -1,0 +1,346 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { useFormStatus } from "react-dom";
+import { Plus, TriangleAlert, X } from "lucide-react";
+import { DialogFooter } from "@/components/ui/dialog";
+import { formatMoney } from "@/lib/format";
+import { PhotoCapture } from "@/components/photo-capture";
+import type { ActionState } from "./actions";
+import type { PackageOption } from "./data";
+
+const inputClass =
+  "w-full rounded border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-primary focus:ring-1 focus:ring-primary aria-invalid:border-destructive";
+
+export type ExtraOption = { id: string; name: string; fee: string };
+
+export type MemberInitial = {
+  membershipId: string;
+  name: string;
+  phone: string;
+  cnic: string | null;
+  email: string | null;
+  joinDate: string; // yyyy-mm-dd
+  packageId: string;
+  photoUrl: string | null;
+  extraIds: string[];
+};
+
+/** 3600212345678 -> 36002-1234567-8 */
+function formatCnic(digits: string): string {
+  const d = digits.replace(/\D/g, "").slice(0, 13);
+  if (d.length <= 5) return d;
+  if (d.length <= 12) return `${d.slice(0, 5)}-${d.slice(5)}`;
+  return `${d.slice(0, 5)}-${d.slice(5, 12)}-${d.slice(12)}`;
+}
+
+function SubmitButton({ label }: { label: string }) {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="rounded bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-[#570000] disabled:cursor-not-allowed disabled:opacity-70"
+    >
+      {pending ? "Saving…" : label}
+    </button>
+  );
+}
+
+/**
+ * The shared body of the add / edit member dialogs.
+ *
+ * `initial` present => edit mode: the form carries a hidden membershipId, the
+ * photo starts from the existing headshot, and the submit relabels.
+ */
+export function MemberForm({
+  state,
+  action,
+  formRef,
+  packages,
+  extras,
+  initial,
+  onCancel,
+}: {
+  state: ActionState;
+  action: (formData: FormData) => void;
+  formRef: React.RefObject<HTMLFormElement | null>;
+  packages: PackageOption[];
+  extras: ExtraOption[];
+  initial?: MemberInitial;
+  onCancel: () => void;
+}) {
+  const editing = Boolean(initial);
+  const today = new Date().toISOString().slice(0, 10);
+
+  const [cnic, setCnic] = useState(initial?.cnic ?? "");
+  // In edit mode the existing headshot seeds the preview.
+  const [photo, setPhoto] = useState<string | null>(initial?.photoUrl ?? null);
+  const photoTouched = photo !== (initial?.photoUrl ?? null);
+
+  const [chosenExtraIds, setChosenExtraIds] = useState<string[]>(initial?.extraIds ?? []);
+  const [extraToAdd, setExtraToAdd] = useState("");
+
+  const extraById = useMemo(() => new Map(extras.map((e) => [e.id, e])), [extras]);
+  const unchosen = extras.filter((e) => !chosenExtraIds.includes(e.id));
+
+  const extrasTotal = chosenExtraIds.reduce(
+    (sum, id) => sum + Number(extraById.get(id)?.fee ?? 0),
+    0
+  );
+
+  function addExtra() {
+    const id = extraToAdd || unchosen[0]?.id;
+    if (id && !chosenExtraIds.includes(id)) {
+      setChosenExtraIds((cur) => [...cur, id]);
+    }
+    setExtraToAdd("");
+  }
+
+  return (
+    <form ref={formRef} action={action} className="flex flex-col gap-4" noValidate>
+      {editing && <input type="hidden" name="membershipId" value={initial!.membershipId} />}
+
+      {state.error && (
+        <div
+          role="alert"
+          className="flex items-start gap-2 rounded border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-[13px] leading-[18px] text-destructive"
+        >
+          <TriangleAlert className="mt-px size-4 shrink-0" aria-hidden="true" />
+          <span>{state.error}</span>
+        </div>
+      )}
+
+      {/*
+        Photo field. On a fresh add it is the raw data: URL (or empty). On an
+        edit it is: unchanged -> "", replaced -> data: URL, cleared -> "__remove__".
+      */}
+      <input
+        type="hidden"
+        name="photo"
+        value={
+          !editing
+            ? photo ?? ""
+            : !photoTouched
+              ? ""
+              : photo?.startsWith("data:image/")
+                ? photo
+                : "__remove__"
+        }
+      />
+      <PhotoCapture value={photo} onChange={setPhoto} />
+
+      <div className="flex flex-col">
+        <label htmlFor="name" className="label-caps mb-1 text-muted-foreground">
+          Full name
+        </label>
+        <input
+          id="name"
+          name="name"
+          required
+          autoFocus
+          defaultValue={initial?.name}
+          placeholder="Ahsan Raza"
+          aria-invalid={state.fieldErrors?.name ? true : undefined}
+          className={inputClass}
+        />
+        {state.fieldErrors?.name && (
+          <p className="mt-1 text-[13px] text-destructive">{state.fieldErrors.name}</p>
+        )}
+      </div>
+
+      <div className="flex flex-col">
+        <label htmlFor="cnic" className="label-caps mb-1 text-muted-foreground">
+          CNIC <span className="font-normal normal-case tracking-normal">(optional)</span>
+        </label>
+        <input
+          id="cnic"
+          inputMode="numeric"
+          value={formatCnic(cnic)}
+          onChange={(e) => setCnic(e.target.value.replace(/\D/g, "").slice(0, 13))}
+          placeholder="36002-1234567-8"
+          aria-invalid={state.fieldErrors?.cnic ? true : undefined}
+          className={inputClass}
+        />
+        <input type="hidden" name="cnic" value={cnic} />
+        {state.fieldErrors?.cnic && (
+          <p className="mt-1 text-[13px] text-destructive">{state.fieldErrors.cnic}</p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col">
+          <label htmlFor="phone" className="label-caps mb-1 text-muted-foreground">
+            Phone
+          </label>
+          <input
+            id="phone"
+            name="phone"
+            required
+            inputMode="numeric"
+            maxLength={11}
+            pattern="\d{11}"
+            defaultValue={initial?.phone}
+            placeholder="03001234567"
+            aria-invalid={state.fieldErrors?.phone ? true : undefined}
+            className={inputClass}
+          />
+          {state.fieldErrors?.phone && (
+            <p className="mt-1 text-[13px] text-destructive">{state.fieldErrors.phone}</p>
+          )}
+        </div>
+
+        <div className="flex flex-col">
+          <label htmlFor="joinDate" className="label-caps mb-1 text-muted-foreground">
+            Joined
+          </label>
+          <input
+            id="joinDate"
+            name="joinDate"
+            type="date"
+            defaultValue={initial?.joinDate ?? today}
+            max={today}
+            className={inputClass}
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col">
+        <label htmlFor="email" className="label-caps mb-1 text-muted-foreground">
+          Email <span className="font-normal normal-case tracking-normal">(optional)</span>
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          defaultValue={initial?.email ?? ""}
+          placeholder="ahsan@example.com"
+          aria-invalid={state.fieldErrors?.email ? true : undefined}
+          className={inputClass}
+        />
+        {state.fieldErrors?.email && (
+          <p className="mt-1 text-[13px] text-destructive">{state.fieldErrors.email}</p>
+        )}
+      </div>
+
+      <div className="flex flex-col">
+        <label htmlFor="packageId" className="label-caps mb-1 text-muted-foreground">
+          Package
+        </label>
+        <select
+          id="packageId"
+          name="packageId"
+          required
+          defaultValue={initial?.packageId ?? packages[0]?.id}
+          aria-invalid={state.fieldErrors?.packageId ? true : undefined}
+          className={inputClass}
+        >
+          {packages.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name} — {formatMoney(p.price)}
+            </option>
+          ))}
+        </select>
+        {state.fieldErrors?.packageId && (
+          <p className="mt-1 text-[13px] text-destructive">{state.fieldErrors.packageId}</p>
+        )}
+      </div>
+
+      {/* Extras picker: dropdown + Add, building a removable list. Many allowed. */}
+      <div className="flex flex-col">
+        <label htmlFor="extra-add" className="label-caps mb-1 text-muted-foreground">
+          Extras{" "}
+          <span className="font-normal normal-case tracking-normal">(optional)</span>
+        </label>
+
+        {extras.length === 0 ? (
+          <p className="rounded border border-border bg-secondary px-3 py-2 text-[12px] text-muted-foreground">
+            No extras exist yet. Add them with the Extras button first.
+          </p>
+        ) : (
+          <>
+            {/* Each chosen extra rides along as a hidden field. */}
+            {chosenExtraIds.map((id) => (
+              <input key={id} type="hidden" name="extraIds" value={id} />
+            ))}
+
+            <div className="flex gap-2">
+              <select
+                id="extra-add"
+                value={extraToAdd}
+                onChange={(e) => setExtraToAdd(e.target.value)}
+                disabled={unchosen.length === 0}
+                className={`${inputClass} flex-1 disabled:opacity-50`}
+              >
+                {unchosen.length === 0 ? (
+                  <option value="">All extras added</option>
+                ) : (
+                  unchosen.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.name} — {formatMoney(e.fee)}
+                    </option>
+                  ))
+                )}
+              </select>
+              <button
+                type="button"
+                onClick={addExtra}
+                disabled={unchosen.length === 0}
+                className="flex shrink-0 items-center gap-1 rounded border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Plus className="size-3.5" aria-hidden="true" />
+                Add
+              </button>
+            </div>
+
+            {chosenExtraIds.length > 0 && (
+              <ul className="mt-2 flex flex-col divide-y divide-border rounded-lg border border-border">
+                {chosenExtraIds.map((id) => {
+                  const extra = extraById.get(id);
+                  return (
+                    <li
+                      key={id}
+                      className="flex items-center gap-2 px-3 py-2 text-sm"
+                    >
+                      <span className="min-w-0 flex-1 truncate">
+                        {extra?.name ?? "—"}
+                      </span>
+                      <span className="data-mono shrink-0 text-muted-foreground">
+                        {formatMoney(extra?.fee ?? "0")}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setChosenExtraIds((cur) => cur.filter((x) => x !== id))
+                        }
+                        aria-label={`Remove ${extra?.name ?? "extra"}`}
+                        className="rounded p-0.5 text-muted-foreground transition-colors hover:text-destructive"
+                      >
+                        <X className="size-3.5" aria-hidden="true" />
+                      </button>
+                    </li>
+                  );
+                })}
+                <li className="flex items-center justify-between bg-secondary/50 px-3 py-2 text-sm font-medium">
+                  <span>Extras total</span>
+                  <span className="data-mono">{formatMoney(extrasTotal)}</span>
+                </li>
+              </ul>
+            )}
+          </>
+        )}
+      </div>
+
+      <DialogFooter className="mt-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded border border-border px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+        >
+          Cancel
+        </button>
+        <SubmitButton label={editing ? "Save changes" : "Add member"} />
+      </DialogFooter>
+    </form>
+  );
+}

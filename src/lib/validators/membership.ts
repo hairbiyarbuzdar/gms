@@ -1,18 +1,38 @@
 import { z } from "zod";
 import { phoneRequired } from "./phone";
 
-export const createMembershipSchema = z.object({
+/** 13 digits, dashes stripped by the client. Optional. */
+const cnicField = z
+  .union([z.string().trim().regex(/^\d{13}$/, "CNIC must be 13 digits."), z.literal("")])
+  .optional();
+
+/** Every extra id the form carries, deduped. Empty when none picked. */
+const extraIdsField = z
+  .union([z.array(z.string().trim().min(1)), z.string().trim().min(1)])
+  .optional()
+  .transform((v) => {
+    if (!v) return [] as string[];
+    const list = Array.isArray(v) ? v : [v];
+    return [...new Set(list)];
+  });
+
+const memberFields = {
   name: z.string().trim().min(1, "Name is required.").max(120),
   phone: phoneRequired,
   email: z.union([z.string().trim().email("Enter a valid email."), z.literal("")]).optional(),
-  /** 13 digits, dashes stripped by the client. Optional. */
-  cnic: z
-    .union([z.string().trim().regex(/^\d{13}$/, "CNIC must be 13 digits."), z.literal("")])
-    .optional(),
+  cnic: cnicField,
   joinDate: z.string().trim().optional(),
   packageId: z.string().trim().min(1, "Select a package."),
-  /** data: URL from the webcam capture, or empty. Validated server-side. */
+  /** data: URL from the webcam capture, "" to keep the current, "__remove__" to clear. */
   photo: z.string().trim().optional(),
+  extraIds: extraIdsField,
+};
+
+export const createMembershipSchema = z.object(memberFields);
+
+export const updateMembershipSchema = z.object({
+  membershipId: z.string().trim().min(1),
+  ...memberFields,
 });
 
 export const renewMembershipSchema = z.object({
