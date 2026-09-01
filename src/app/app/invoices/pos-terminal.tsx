@@ -29,7 +29,6 @@ type PaymentMethod = { id: string; name: string };
 
 type CartLine = { productId: string; quantity: number };
 
-const ALL = "All items";
 
 export function PosTerminal({
   products,
@@ -41,7 +40,6 @@ export function PosTerminal({
   paymentMethods: PaymentMethod[];
 }) {
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState(ALL);
   const [cart, setCart] = useState<CartLine[]>([]);
   const [memberId, setMemberId] = useState<string | null>(null);
   const [memberQuery, setMemberQuery] = useState("");
@@ -51,22 +49,15 @@ export function PosTerminal({
   const [done, setDone] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const categories = useMemo(() => {
-    const set = new Set(products.map((p) => p.category).filter(Boolean) as string[]);
-    return [ALL, ...[...set].sort()];
-  }, [products]);
-
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return products.filter((p) => {
-      if (category !== ALL && p.category !== category) return false;
-      if (!q) return true;
-      return (
+    if (!q) return products;
+    return products.filter(
+      (p) =>
         p.name.toLowerCase().includes(q) ||
         (p.sku?.toLowerCase().includes(q) ?? false)
-      );
-    });
-  }, [products, query, category]);
+    );
+  }, [products, query]);
 
   const byId = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
 
@@ -183,25 +174,6 @@ export function PosTerminal({
           </div>
         </div>
 
-        {categories.length > 1 && (
-          <div className="flex gap-1 overflow-x-auto border-b border-border px-4 py-2">
-            {categories.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setCategory(c)}
-                className={`shrink-0 rounded px-3 py-1.5 text-[13px] font-medium transition-colors ${
-                  category === c
-                    ? "bg-primary/5 text-primary"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-        )}
-
         <div className="p-4">
           {visible.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -212,7 +184,7 @@ export function PosTerminal({
               <p className="mt-1 text-[13px] text-muted-foreground">
                 {products.length === 0
                   ? "Add products in Inventory before making a sale."
-                  : "Try a different search or category."}
+                  : "Try a different search."}
               </p>
             </div>
           ) : (
