@@ -12,7 +12,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="mt-2 flex w-full items-center justify-center gap-2 rounded bg-primary py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-[#570000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card disabled:cursor-not-allowed disabled:opacity-70"
+      className="mt-2 flex w-full items-center justify-center gap-2 rounded bg-primary py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card disabled:cursor-not-allowed disabled:opacity-70"
     >
       {pending ? "Signing in…" : "Sign In"}
       {!pending && <ArrowRight className="size-[18px]" aria-hidden="true" />}

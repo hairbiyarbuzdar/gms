@@ -457,7 +457,7 @@ export function PosTerminal({
             type="button"
             onClick={finalize}
             disabled={pending || cart.length === 0 || paymentMethods.length === 0}
-            className="mt-3 w-full rounded bg-primary py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-[#570000] disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-3 w-full rounded bg-primary py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             {pending ? "Recording…" : "Finalize sale"}
           </button>

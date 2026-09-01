@@ -5,7 +5,6 @@ import {
   LayoutDashboard,
   Receipt,
   Table2,
-  TrendingUp,
   Truck,
   Users,
 } from "lucide-react";
@@ -28,7 +27,6 @@ export const TENANT_NAV: NavItem[] = [
   { href: "/app/suppliers", label: "Suppliers", icon: Truck },
   { href: "/app/expenses", label: "Expenses", icon: BadgeDollarSign },
   { href: "/app/payment-methods", label: "Payment Methods", icon: CreditCard },
-  { href: "/app/reports", label: "Reports", icon: TrendingUp },
   { href: "/app/data", label: "Data Viewer", icon: Table2 },
 ];
 

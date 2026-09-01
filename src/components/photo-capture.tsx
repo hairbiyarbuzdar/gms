@@ -156,7 +156,7 @@ export function PhotoCapture({
               <button
                 type="button"
                 onClick={capture}
-                className="rounded bg-primary px-4 py-1.5 text-[13px] font-medium text-primary-foreground transition-colors hover:bg-[#570000]"
+                className="rounded bg-primary px-4 py-1.5 text-[13px] font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
               >
                 Take photo
               </button>

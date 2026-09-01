@@ -182,7 +182,7 @@ export function PurchaseDialog({
       }}
     >
       <DialogTrigger asChild>
-        <button className="flex items-center gap-2 rounded bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-[#570000]">
+        <button className="flex items-center gap-2 rounded bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover">
           <Plus className="size-4" aria-hidden="true" />
           New purchase invoice
         </button>
@@ -536,7 +536,7 @@ export function PurchaseDialog({
                 type="button"
                 onClick={submit}
                 disabled={pending}
-                className="rounded bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-[#570000] disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {pending ? "Saving…" : "Save invoice"}
               </button>
