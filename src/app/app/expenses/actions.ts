@@ -3,13 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { tenantDb } from "@/lib/tenant-db";
-import { getMethodBalance } from "@/lib/payment-method-balance";
+import { recordExpense } from "@/lib/record-expense";
 
 const expenseSchema = z.object({
   categoryId: z.string().trim().min(1, "Choose a category."),
   amount: z.coerce
     .number({ error: "Enter a valid amount." })
-    .positive("Amount must be greater than zero."),
+    .positive("Amount must be greater than zero.")
+    .multipleOf(0.01, "Use no more than two decimal places.")
+    .max(9999999999.99, "Amount is too large."),
   paymentMethodId: z.string().trim().min(1, "Choose a payment method."),
   description: z.string().trim().max(200).optional(),
   spentAt: z.string().trim().optional(),
@@ -63,46 +65,15 @@ export async function createExpense(
 
   const { categoryId, amount, paymentMethodId, description, spentAt } = parsed.data;
 
-  // Both ids arrived from the client, so both are re-checked against this
-  // tenant before anything is written.
-  const [category, method] = await Promise.all([
-    db.expenseCategory.findFirst({
-      where: { id: categoryId, tenantId },
-      select: { id: true },
-    }),
-    db.paymentMethod.findFirst({
-      where: { id: paymentMethodId, tenantId, isActive: true },
-      select: { id: true },
-    }),
-  ]);
-
-  if (!category) return { fieldErrors: { categoryId: "That category is unavailable." } };
-  if (!method) {
-    return { fieldErrors: { paymentMethodId: "That payment method is unavailable." } };
-  }
-
-  // An expense cannot overdraw its method (one user per tenant, so a plain
-  // pre-check is enough - no concurrent writer to race).
-  const balance = await getMethodBalance(db, tenantId, paymentMethodId);
-  if (amount > balance + 0.001) {
-    return {
-      fieldErrors: {
-        amount: `Not enough funds. ${balance.toFixed(2)} available in that method.`,
-      },
-    };
-  }
-
-  await db.expense.create({
-    data: {
-      tenantId,
-      categoryId,
-      amount,
-      paymentMethodId,
-      description: description || null,
-      spentAt: spentAt ? new Date(spentAt) : new Date(),
-    },
+  const result = await recordExpense(db, {
+    tenantId,
+    categoryId,
+    amount,
+    paymentMethodId,
+    description: description || null,
+    spentAt: spentAt ? new Date(spentAt) : new Date(),
   });
-
+  if (!("ok" in result)) return result;
   revalidateAll();
   return { ok: true };
 }

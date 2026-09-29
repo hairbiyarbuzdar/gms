@@ -26,7 +26,7 @@ async function main() {
     const tenant = await tx.tenant.create({
       data: {
         name: "Demo Gym",
-        location: "Gulberg III, Lahore",
+        location: "Jinnah Town , Quetta",
         slug: "demo-gym",
         createdById: superadmin.id,
       },

@@ -44,13 +44,13 @@ function formatCnic(digits: string): string {
   return `${d.slice(0, 5)}-${d.slice(5, 12)}-${d.slice(12)}`;
 }
 
-function SubmitButton({ label }: { label: string }) {
+function SubmitButton({ label, disabled }: { label: string; disabled?: boolean }) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
-      disabled={pending}
-      className="rounded bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-70"
+      disabled={pending || disabled}
+      className="bg-primary text-primary-foreground hover:bg-primary-hover rounded px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-70"
     >
       {pending ? "Saving…" : label}
     </button>
@@ -87,9 +87,7 @@ export function MemberForm({
 
   // The joining payment is only collected on a fresh add.
   const [packageId, setPackageId] = useState(initial?.packageId ?? packages[0]?.id ?? "");
-  const [showExtras, setShowExtras] = useState(
-    (initial?.extraIds?.length ?? 0) > 0
-  );
+  const [showExtras, setShowExtras] = useState((initial?.extraIds?.length ?? 0) > 0);
 
   const [cnic, setCnic] = useState(initial?.cnic ?? "");
   // Joining date drives the default renewal date (one month on) until the
@@ -100,6 +98,7 @@ export function MemberForm({
   const renewalValue = renewalTouched ? renewalDate : oneMonthAfter(joinDate);
   // In edit mode the existing headshot seeds the preview.
   const [photo, setPhoto] = useState<string | null>(initial?.photoUrl ?? null);
+  const [photoBusy, setPhotoBusy] = useState(false);
   const photoTouched = photo !== (initial?.photoUrl ?? null);
 
   const [chosenExtraIds, setChosenExtraIds] = useState<string[]>(initial?.extraIds ?? []);
@@ -113,9 +112,7 @@ export function MemberForm({
     0
   );
 
-  const packageFee = Number(
-    packages.find((p) => p.id === packageId)?.price ?? 0
-  );
+  const packageFee = Number(packages.find((p) => p.id === packageId)?.price ?? 0);
   // Prefill the joining payment to what the member owes today.
   const [amountPaid, setAmountPaid] = useState<string>("");
   const suggestedAmount = (packageFee + extrasTotal).toFixed(2);
@@ -131,13 +128,21 @@ export function MemberForm({
   }
 
   return (
-    <form ref={formRef} action={action} className="flex flex-col gap-4" noValidate>
+    <form
+      ref={formRef}
+      action={action}
+      onSubmit={(event) => {
+        if (photoBusy) event.preventDefault();
+      }}
+      className="flex flex-col gap-4"
+      noValidate
+    >
       {editing && <input type="hidden" name="membershipId" value={initial!.membershipId} />}
 
       {state.error && (
         <div
           role="alert"
-          className="flex items-start gap-2 rounded border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-[13px] leading-[18px] text-destructive"
+          className="border-destructive/30 bg-destructive/5 text-destructive flex items-start gap-2 rounded border px-3 py-2.5 text-[13px] leading-[18px]"
         >
           <TriangleAlert className="mt-px size-4 shrink-0" aria-hidden="true" />
           <span>{state.error}</span>
@@ -153,7 +158,7 @@ export function MemberForm({
         name="photo"
         value={
           !editing
-            ? photo ?? ""
+            ? (photo ?? "")
             : !photoTouched
               ? ""
               : photo?.startsWith("data:image/")
@@ -161,10 +166,10 @@ export function MemberForm({
                 : "__remove__"
         }
       />
-      <PhotoCapture value={photo} onChange={setPhoto} />
+      <PhotoCapture value={photo} onChange={setPhoto} onBusyChange={setPhotoBusy} />
 
       <div className="flex flex-col">
-        <label htmlFor="name" className="label-caps mb-1 text-muted-foreground">
+        <label htmlFor="name" className="label-caps text-muted-foreground mb-1">
           Full name
         </label>
         <input
@@ -178,13 +183,13 @@ export function MemberForm({
           className={inputClass}
         />
         {state.fieldErrors?.name && (
-          <p className="mt-1 text-[13px] text-destructive">{state.fieldErrors.name}</p>
+          <p className="text-destructive mt-1 text-[13px]">{state.fieldErrors.name}</p>
         )}
       </div>
 
       <div className="flex flex-col">
-        <label htmlFor="cnic" className="label-caps mb-1 text-muted-foreground">
-          CNIC <span className="font-normal normal-case tracking-normal">(optional)</span>
+        <label htmlFor="cnic" className="label-caps text-muted-foreground mb-1">
+          CNIC <span className="font-normal tracking-normal normal-case">(optional)</span>
         </label>
         <input
           id="cnic"
@@ -197,13 +202,13 @@ export function MemberForm({
         />
         <input type="hidden" name="cnic" value={cnic} />
         {state.fieldErrors?.cnic && (
-          <p className="mt-1 text-[13px] text-destructive">{state.fieldErrors.cnic}</p>
+          <p className="text-destructive mt-1 text-[13px]">{state.fieldErrors.cnic}</p>
         )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col">
-          <label htmlFor="phone" className="label-caps mb-1 text-muted-foreground">
+          <label htmlFor="phone" className="label-caps text-muted-foreground mb-1">
             Phone
           </label>
           <input
@@ -219,12 +224,12 @@ export function MemberForm({
             className={inputClass}
           />
           {state.fieldErrors?.phone && (
-            <p className="mt-1 text-[13px] text-destructive">{state.fieldErrors.phone}</p>
+            <p className="text-destructive mt-1 text-[13px]">{state.fieldErrors.phone}</p>
           )}
         </div>
 
         <div className="flex flex-col">
-          <label htmlFor="joinDate" className="label-caps mb-1 text-muted-foreground">
+          <label htmlFor="joinDate" className="label-caps text-muted-foreground mb-1">
             Joined
           </label>
           <input
@@ -241,7 +246,7 @@ export function MemberForm({
 
       {!editing && (
         <div className="flex flex-col">
-          <label htmlFor="renewalDate" className="label-caps mb-1 text-muted-foreground">
+          <label htmlFor="renewalDate" className="label-caps text-muted-foreground mb-1">
             Renewal date
           </label>
           <input
@@ -257,20 +262,18 @@ export function MemberForm({
             aria-invalid={state.fieldErrors?.renewalDate ? true : undefined}
             className={inputClass}
           />
-          <p className="mt-1 text-[12px] text-muted-foreground">
+          <p className="text-muted-foreground mt-1 text-[12px]">
             Defaults to one month after joining. Editable.
           </p>
           {state.fieldErrors?.renewalDate && (
-            <p className="mt-1 text-[13px] text-destructive">
-              {state.fieldErrors.renewalDate}
-            </p>
+            <p className="text-destructive mt-1 text-[13px]">{state.fieldErrors.renewalDate}</p>
           )}
         </div>
       )}
 
       <div className="flex flex-col">
-        <label htmlFor="email" className="label-caps mb-1 text-muted-foreground">
-          Email <span className="font-normal normal-case tracking-normal">(optional)</span>
+        <label htmlFor="email" className="label-caps text-muted-foreground mb-1">
+          Email <span className="font-normal tracking-normal normal-case">(optional)</span>
         </label>
         <input
           id="email"
@@ -282,12 +285,12 @@ export function MemberForm({
           className={inputClass}
         />
         {state.fieldErrors?.email && (
-          <p className="mt-1 text-[13px] text-destructive">{state.fieldErrors.email}</p>
+          <p className="text-destructive mt-1 text-[13px]">{state.fieldErrors.email}</p>
         )}
       </div>
 
       <div className="flex flex-col">
-        <label htmlFor="packageId" className="label-caps mb-1 text-muted-foreground">
+        <label htmlFor="packageId" className="label-caps text-muted-foreground mb-1">
           Package
         </label>
         <select
@@ -306,7 +309,7 @@ export function MemberForm({
           ))}
         </select>
         {state.fieldErrors?.packageId && (
-          <p className="mt-1 text-[13px] text-destructive">{state.fieldErrors.packageId}</p>
+          <p className="text-destructive mt-1 text-[13px]">{state.fieldErrors.packageId}</p>
         )}
       </div>
 
@@ -316,20 +319,19 @@ export function MemberForm({
           <button
             type="button"
             onClick={() => setShowExtras(true)}
-            className="flex w-fit items-center gap-1 rounded border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+            className="border-border text-muted-foreground hover:border-primary hover:text-primary flex w-fit items-center gap-1 rounded border px-3 py-2 text-sm transition-colors"
           >
             <Plus className="size-3.5" aria-hidden="true" />
             Add extras
           </button>
         ) : (
           <>
-            <label htmlFor="extra-add" className="label-caps mb-1 text-muted-foreground">
-              Extras{" "}
-              <span className="font-normal normal-case tracking-normal">(optional)</span>
+            <label htmlFor="extra-add" className="label-caps text-muted-foreground mb-1">
+              Extras <span className="font-normal tracking-normal normal-case">(optional)</span>
             </label>
 
             {extras.length === 0 ? (
-              <p className="rounded border border-border bg-secondary px-3 py-2 text-[12px] text-muted-foreground">
+              <p className="border-border bg-secondary text-muted-foreground rounded border px-3 py-2 text-[12px]">
                 No extras exist yet. Add them with the Extras button first.
               </p>
             ) : (
@@ -361,7 +363,7 @@ export function MemberForm({
                     type="button"
                     onClick={addExtra}
                     disabled={unchosen.length === 0}
-                    className="flex shrink-0 items-center gap-1 rounded border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                    className="border-border text-muted-foreground hover:border-primary hover:text-primary flex shrink-0 items-center gap-1 rounded border px-3 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Plus className="size-3.5" aria-hidden="true" />
                     Add
@@ -369,34 +371,27 @@ export function MemberForm({
                 </div>
 
                 {chosenExtraIds.length > 0 && (
-                  <ul className="mt-2 flex flex-col divide-y divide-border rounded-lg border border-border">
+                  <ul className="divide-border border-border mt-2 flex flex-col divide-y rounded-lg border">
                     {chosenExtraIds.map((id) => {
                       const extra = extraById.get(id);
                       return (
-                        <li
-                          key={id}
-                          className="flex items-center gap-2 px-3 py-2 text-sm"
-                        >
-                          <span className="min-w-0 flex-1 truncate">
-                            {extra?.name ?? "—"}
-                          </span>
-                          <span className="data-mono shrink-0 text-muted-foreground">
+                        <li key={id} className="flex items-center gap-2 px-3 py-2 text-sm">
+                          <span className="min-w-0 flex-1 truncate">{extra?.name ?? "—"}</span>
+                          <span className="data-mono text-muted-foreground shrink-0">
                             {formatMoney(extra?.fee ?? "0")}
                           </span>
                           <button
                             type="button"
-                            onClick={() =>
-                              setChosenExtraIds((cur) => cur.filter((x) => x !== id))
-                            }
+                            onClick={() => setChosenExtraIds((cur) => cur.filter((x) => x !== id))}
                             aria-label={`Remove ${extra?.name ?? "extra"}`}
-                            className="rounded p-0.5 text-muted-foreground transition-colors hover:text-destructive"
+                            className="text-muted-foreground hover:text-destructive rounded p-0.5 transition-colors"
                           >
                             <X className="size-3.5" aria-hidden="true" />
                           </button>
                         </li>
                       );
                     })}
-                    <li className="flex items-center justify-between bg-secondary/50 px-3 py-2 text-sm font-medium">
+                    <li className="bg-secondary/50 flex items-center justify-between px-3 py-2 text-sm font-medium">
                       <span>Extras total</span>
                       <span className="data-mono">{formatMoney(extrasTotal)}</span>
                     </li>
@@ -410,9 +405,9 @@ export function MemberForm({
 
       {/* Joining payment - recorded as the member's first renewal. Add mode only. */}
       {!editing && (
-        <div className="grid grid-cols-2 gap-4 border-t border-border pt-4">
+        <div className="border-border grid grid-cols-2 gap-4 border-t pt-4">
           <div className="flex flex-col">
-            <label htmlFor="amountPaid" className="label-caps mb-1 text-muted-foreground">
+            <label htmlFor="amountPaid" className="label-caps text-muted-foreground mb-1">
               Amount paid
             </label>
             <input
@@ -431,21 +426,16 @@ export function MemberForm({
               className={inputClass}
             />
             {state.fieldErrors?.amountPaid && (
-              <p className="mt-1 text-[13px] text-destructive">
-                {state.fieldErrors.amountPaid}
-              </p>
+              <p className="text-destructive mt-1 text-[13px]">{state.fieldErrors.amountPaid}</p>
             )}
           </div>
 
           <div className="flex flex-col">
-            <label
-              htmlFor="paymentMethodId"
-              className="label-caps mb-1 text-muted-foreground"
-            >
+            <label htmlFor="paymentMethodId" className="label-caps text-muted-foreground mb-1">
               Paid by
             </label>
             {paymentMethods.length === 0 ? (
-              <p className="rounded border border-border bg-secondary px-3 py-2 text-[12px] text-muted-foreground">
+              <p className="border-border bg-secondary text-muted-foreground rounded border px-3 py-2 text-[12px]">
                 Add a payment method first.
               </p>
             ) : (
@@ -465,7 +455,7 @@ export function MemberForm({
               </select>
             )}
             {state.fieldErrors?.paymentMethodId && (
-              <p className="mt-1 text-[13px] text-destructive">
+              <p className="text-destructive mt-1 text-[13px]">
                 {state.fieldErrors.paymentMethodId}
               </p>
             )}
@@ -477,11 +467,11 @@ export function MemberForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded border border-border px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+          className="border-border text-muted-foreground hover:border-primary hover:text-primary rounded border px-4 py-2.5 text-sm transition-colors"
         >
           Cancel
         </button>
-        <SubmitButton label={editing ? "Save changes" : "Add member"} />
+        <SubmitButton disabled={photoBusy} label={editing ? "Save changes" : "Add member"} />
       </DialogFooter>
     </form>
   );

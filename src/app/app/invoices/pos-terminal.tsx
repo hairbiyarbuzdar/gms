@@ -15,6 +15,8 @@ import {
 import { formatMoney, formatMoneyPrecise } from "@/lib/format";
 import { serialLabel, serialMatches } from "@/lib/serial";
 import { createSale } from "./actions";
+import { InvoiceDialog } from "./invoice-dialog";
+import type { InvoiceReceipt } from "./invoice-receipt";
 
 export type CatalogProduct = {
   id: string;
@@ -30,7 +32,6 @@ export type MemberOption = { id: string; name: string; barcode: string };
 type PaymentMethod = { id: string; name: string };
 
 type CartLine = { productId: string; quantity: number };
-
 
 export function PosTerminal({
   products,
@@ -49,14 +50,14 @@ export function PosTerminal({
   const [methodId, setMethodId] = useState(paymentMethods[0]?.id ?? "");
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
+  const [invoice, setInvoice] = useState<InvoiceReceipt | null>(null);
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return products;
-    return products.filter(
-      (p) => p.name.toLowerCase().includes(q) || serialMatches(p.serial, q)
-    );
+    return products.filter((p) => p.name.toLowerCase().includes(q) || serialMatches(p.serial, q));
   }, [products, query]);
 
   const byId = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
@@ -71,15 +72,13 @@ export function PosTerminal({
   const discountValue = Math.max(0, Number(discount) || 0);
   const total = Math.max(0, subtotal - discountValue);
 
-  const member = memberId ? members.find((m) => m.id === memberId) ?? null : null;
+  const member = memberId ? (members.find((m) => m.id === memberId) ?? null) : null;
 
   const memberMatches = useMemo(() => {
     const q = memberQuery.trim().toLowerCase();
     if (!q) return [];
     return members
-      .filter(
-        (m) => m.name.toLowerCase().includes(q) || m.barcode.toLowerCase().includes(q)
-      )
+      .filter((m) => m.name.toLowerCase().includes(q) || m.barcode.toLowerCase().includes(q))
       .slice(0, 5);
   }, [members, memberQuery]);
 
@@ -91,9 +90,7 @@ export function PosTerminal({
       const inCart = existing?.quantity ?? 0;
       if (inCart >= product.quantity) return current;
       return existing
-        ? current.map((l) =>
-            l.productId === product.id ? { ...l, quantity: l.quantity + 1 } : l
-          )
+        ? current.map((l) => (l.productId === product.id ? { ...l, quantity: l.quantity + 1 } : l))
         : [...current, { productId: product.id, quantity: 1 }];
     });
   }
@@ -124,6 +121,7 @@ export function PosTerminal({
   }
 
   function finalize() {
+    if (pending) return;
     setError(null);
     setDone(null);
 
@@ -149,18 +147,22 @@ export function PosTerminal({
       setMemberId(null);
       setMemberQuery("");
       setDone(result.invoiceNumber ?? null);
+      if (result.invoice) {
+        setInvoice(result.invoice);
+        setInvoiceOpen(true);
+      }
     });
   }
 
   return (
     <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_380px]">
       {/* Catalogue */}
-      <section className="rounded-lg border border-border bg-card" aria-label="Product catalog">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
+      <section className="border-border bg-card rounded-lg border" aria-label="Product catalog">
+        <div className="border-border flex flex-wrap items-center justify-between gap-3 border-b p-4">
           <h2 className="text-lg font-semibold tracking-tight">Product catalog</h2>
           <div className="relative w-full sm:w-72">
             <ScanLine
-              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60"
+              className="text-muted-foreground/60 pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
               aria-hidden="true"
             />
             <input
@@ -169,7 +171,7 @@ export function PosTerminal({
               onKeyDown={onSearchKeyDown}
               placeholder="Serial number or name…"
               aria-label="Search products by serial number or name"
-              className="w-full rounded border border-input bg-background py-2 pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-primary focus:ring-1 focus:ring-primary"
+              className="border-input bg-background placeholder:text-muted-foreground/60 focus:border-primary focus:ring-primary w-full rounded border py-2 pr-3 pl-9 text-sm transition-colors outline-none focus:ring-1"
             />
           </div>
         </div>
@@ -177,11 +179,11 @@ export function PosTerminal({
         <div className="p-4">
           {visible.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Package className="size-8 text-muted-foreground/50" aria-hidden="true" />
+              <Package className="text-muted-foreground/50 size-8" aria-hidden="true" />
               <p className="mt-3 text-sm font-medium">
                 {products.length === 0 ? "No products yet" : "Nothing matches"}
               </p>
-              <p className="mt-1 text-[13px] text-muted-foreground">
+              <p className="text-muted-foreground mt-1 text-[13px]">
                 {products.length === 0
                   ? "Add products in Inventory before making a sale."
                   : "Try a different search."}
@@ -205,7 +207,7 @@ export function PosTerminal({
                     >
                       <div className="mb-2 flex items-start justify-between gap-2">
                         <span
-                          className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                          className={`rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wide uppercase ${
                             out
                               ? "bg-destructive/10 text-destructive"
                               : "bg-secondary text-muted-foreground"
@@ -214,7 +216,7 @@ export function PosTerminal({
                           {out ? "Out of stock" : `${product.quantity} in stock`}
                         </span>
                         {inCart > 0 && (
-                          <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
+                          <span className="bg-primary text-primary-foreground flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold">
                             {inCart}
                           </span>
                         )}
@@ -227,11 +229,11 @@ export function PosTerminal({
                           className="mb-2 h-20 w-full rounded object-cover"
                         />
                       )}
-                      <p className="text-sm font-medium leading-snug">{product.name}</p>
-                      <p className="data-mono mt-0.5 text-[11px] text-muted-foreground">
+                      <p className="text-sm leading-snug font-medium">{product.name}</p>
+                      <p className="data-mono text-muted-foreground mt-0.5 text-[11px]">
                         #{serialLabel(product.serial)}
                       </p>
-                      <p className="data-mono mt-auto pt-2 text-sm font-semibold text-primary">
+                      <p className="data-mono text-primary mt-auto pt-2 text-sm font-semibold">
                         {formatMoneyPrecise(product.salePrice)}
                       </p>
                     </button>
@@ -245,24 +247,28 @@ export function PosTerminal({
 
       {/* Cart */}
       <section
-        className="flex h-fit flex-col rounded-lg border border-border bg-card lg:sticky lg:top-24"
+        className="border-border bg-card flex h-fit flex-col rounded-lg border lg:sticky lg:top-24"
         aria-label="Current invoice"
       >
-        <div className="border-b border-border p-4">
+        <div className="border-border border-b p-4">
           <h2 className="text-lg font-semibold tracking-tight">Current invoice</h2>
         </div>
 
         {/* Member lookup */}
-        <div className="border-b border-border p-4">
-          <p className="label-caps mb-2 text-muted-foreground">Member (optional)</p>
+        <div className="border-border border-b p-4">
+          <p className="label-caps text-muted-foreground mb-2">Member (optional)</p>
           {member ? (
-            <div className="flex items-center gap-2 rounded border border-border bg-secondary/50 px-3 py-2">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded bg-primary/10 text-[11px] font-bold text-primary">
-                {member.name.split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("")}
+            <div className="border-border bg-secondary/50 flex items-center gap-2 rounded border px-3 py-2">
+              <span className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded text-[11px] font-bold">
+                {member.name
+                  .split(/\s+/)
+                  .slice(0, 2)
+                  .map((p) => p[0]?.toUpperCase())
+                  .join("")}
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{member.name}</p>
-                <p className="data-mono truncate text-[11px] text-muted-foreground">
+                <p className="data-mono text-muted-foreground truncate text-[11px]">
                   {member.barcode}
                 </p>
               </div>
@@ -270,7 +276,7 @@ export function PosTerminal({
                 type="button"
                 onClick={() => setMemberId(null)}
                 aria-label="Remove member"
-                className="rounded p-1 text-muted-foreground transition-colors hover:text-destructive"
+                className="text-muted-foreground hover:text-destructive rounded p-1 transition-colors"
               >
                 <X className="size-4" aria-hidden="true" />
               </button>
@@ -278,7 +284,7 @@ export function PosTerminal({
           ) : (
             <div className="relative">
               <Search
-                className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60"
+                className="text-muted-foreground/60 pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
                 aria-hidden="true"
               />
               <input
@@ -286,10 +292,10 @@ export function PosTerminal({
                 onChange={(e) => setMemberQuery(e.target.value)}
                 placeholder="Scan ID or enter name…"
                 aria-label="Look up a member"
-                className="w-full rounded border border-input bg-background py-2 pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-primary focus:ring-1 focus:ring-primary"
+                className="border-input bg-background placeholder:text-muted-foreground/60 focus:border-primary focus:ring-primary w-full rounded border py-2 pr-3 pl-9 text-sm transition-colors outline-none focus:ring-1"
               />
               {memberMatches.length > 0 && (
-                <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded border border-border bg-card">
+                <ul className="border-border bg-card absolute z-10 mt-1 w-full overflow-hidden rounded border">
                   {memberMatches.map((m) => (
                     <li key={m.id}>
                       <button
@@ -298,11 +304,14 @@ export function PosTerminal({
                           setMemberId(m.id);
                           setMemberQuery("");
                         }}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-secondary"
+                        className="hover:bg-secondary flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors"
                       >
-                        <UserPlus className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                        <UserPlus
+                          className="text-muted-foreground size-3.5 shrink-0"
+                          aria-hidden="true"
+                        />
                         <span className="truncate">{m.name}</span>
-                        <span className="data-mono ml-auto shrink-0 text-[11px] text-muted-foreground">
+                        <span className="data-mono text-muted-foreground ml-auto shrink-0 text-[11px]">
                           {m.barcode}
                         </span>
                       </button>
@@ -317,11 +326,11 @@ export function PosTerminal({
         {/* Lines */}
         <div className="max-h-[40vh] overflow-y-auto">
           {lines.length === 0 ? (
-            <p className="px-4 py-10 text-center text-[13px] text-muted-foreground">
+            <p className="text-muted-foreground px-4 py-10 text-center text-[13px]">
               No items yet. Tap a product to add it.
             </p>
           ) : (
-            <ul className="divide-y divide-border">
+            <ul className="divide-border divide-y">
               {lines.map((line) => (
                 <li key={line.productId} className="flex items-start gap-2.5 px-4 py-3">
                   {line.product.photoUrl ? (
@@ -334,14 +343,14 @@ export function PosTerminal({
                   ) : (
                     <span
                       aria-hidden="true"
-                      className="flex size-10 shrink-0 items-center justify-center rounded bg-secondary text-[10px] font-bold text-muted-foreground"
+                      className="bg-secondary text-muted-foreground flex size-10 shrink-0 items-center justify-center rounded text-[10px] font-bold"
                     >
                       #{serialLabel(line.product.serial)}
                     </span>
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{line.product.name}</p>
-                    <p className="data-mono text-[12px] text-muted-foreground">
+                    <p className="data-mono text-muted-foreground text-[12px]">
                       {formatMoneyPrecise(line.unit)}
                     </p>
                     <div className="mt-1.5 flex items-center gap-1">
@@ -349,7 +358,7 @@ export function PosTerminal({
                         type="button"
                         onClick={() => setQuantity(line.productId, line.quantity - 1)}
                         aria-label={`Decrease ${line.product.name}`}
-                        className="flex size-6 items-center justify-center rounded border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                        className="border-border text-muted-foreground hover:border-primary hover:text-primary flex size-6 items-center justify-center rounded border transition-colors"
                       >
                         <Minus className="size-3" aria-hidden="true" />
                       </button>
@@ -359,7 +368,7 @@ export function PosTerminal({
                         onClick={() => setQuantity(line.productId, line.quantity + 1)}
                         disabled={line.quantity >= line.product.quantity}
                         aria-label={`Increase ${line.product.name}`}
-                        className="flex size-6 items-center justify-center rounded border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                        className="border-border text-muted-foreground hover:border-primary hover:text-primary flex size-6 items-center justify-center rounded border transition-colors disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         <Plus className="size-3" aria-hidden="true" />
                       </button>
@@ -375,14 +384,14 @@ export function PosTerminal({
         </div>
 
         {/* Totals */}
-        <div className="border-t border-border p-4">
+        <div className="border-border border-t p-4">
           <dl className="space-y-2">
             <div className="flex items-center justify-between gap-3">
-              <dt className="text-[13px] text-muted-foreground">Subtotal</dt>
+              <dt className="text-muted-foreground text-[13px]">Subtotal</dt>
               <dd className="data-mono text-sm">{formatMoneyPrecise(subtotal)}</dd>
             </div>
             <div className="flex items-center justify-between gap-3">
-              <dt className="text-[13px] text-muted-foreground">
+              <dt className="text-muted-foreground text-[13px]">
                 <label htmlFor="discount">Discount</label>
               </dt>
               <dd>
@@ -394,23 +403,23 @@ export function PosTerminal({
                   value={discount}
                   onChange={(e) => setDiscount(e.target.value)}
                   placeholder="0"
-                  className="w-28 rounded border border-input bg-background px-2 py-1 text-right text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="border-input bg-background focus:border-primary focus:ring-primary w-28 rounded border px-2 py-1 text-right text-sm transition-colors outline-none focus:ring-1"
                 />
               </dd>
             </div>
           </dl>
 
-          <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
+          <div className="border-border mt-3 flex items-center justify-between gap-3 border-t pt-3">
             <p className="text-lg font-semibold">Total</p>
-            <p className="data-mono text-lg font-bold text-primary">{formatMoney(total)}</p>
+            <p className="data-mono text-primary text-lg font-bold">{formatMoney(total)}</p>
           </div>
         </div>
 
         {/* Payment */}
-        <div className="border-t border-border p-4">
-          <p className="label-caps mb-2 text-muted-foreground">Payment method</p>
+        <div className="border-border border-t p-4">
+          <p className="label-caps text-muted-foreground mb-2">Payment method</p>
           {paymentMethods.length === 0 ? (
-            <p className="rounded border border-border bg-secondary px-3 py-2 text-[13px] text-muted-foreground">
+            <p className="border-border bg-secondary text-muted-foreground rounded border px-3 py-2 text-[13px]">
               Add a payment method before taking a sale.
             </p>
           ) : (
@@ -436,7 +445,7 @@ export function PosTerminal({
           {error && (
             <div
               role="alert"
-              className="mt-3 flex items-start gap-2 rounded border border-destructive/30 bg-destructive/5 px-3 py-2 text-[13px] text-destructive"
+              className="border-destructive/30 bg-destructive/5 text-destructive mt-3 flex items-start gap-2 rounded border px-3 py-2 text-[13px]"
             >
               <TriangleAlert className="mt-px size-4 shrink-0" aria-hidden="true" />
               <span>{error}</span>
@@ -446,7 +455,7 @@ export function PosTerminal({
           {done && (
             <div
               role="status"
-              className="mt-3 flex items-start gap-2 rounded border border-success/30 bg-success/5 px-3 py-2 text-[13px] text-success"
+              className="border-success/30 bg-success/5 text-success mt-3 flex items-start gap-2 rounded border px-3 py-2 text-[13px]"
             >
               <Check className="mt-px size-4 shrink-0" aria-hidden="true" />
               <span>Sale recorded as {done}.</span>
@@ -457,12 +466,20 @@ export function PosTerminal({
             type="button"
             onClick={finalize}
             disabled={pending || cart.length === 0 || paymentMethods.length === 0}
-            className="mt-3 w-full rounded bg-primary py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className="bg-primary text-primary-foreground hover:bg-primary-hover mt-3 w-full rounded py-3 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {pending ? "Recording…" : "Finalize sale"}
+            {pending ? "Recording…" : "Checkout"}
           </button>
         </div>
       </section>
+      {invoice && (
+        <InvoiceDialog
+          key={invoice.number}
+          invoice={invoice}
+          open={invoiceOpen}
+          onOpenChange={setInvoiceOpen}
+        />
+      )}
     </div>
   );
 }

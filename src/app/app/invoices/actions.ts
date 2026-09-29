@@ -3,11 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { tenantDb } from "@/lib/tenant-db";
 import { createInvoiceSchema } from "@/lib/validators/invoice";
+import type { InvoiceReceipt } from "./invoice-receipt";
 
 export type SaleState = {
   ok?: boolean;
   error?: string;
   invoiceNumber?: string;
+  invoice?: InvoiceReceipt;
 };
 
 /**
@@ -58,18 +60,22 @@ export async function createSale(input: unknown): Promise<SaleState> {
 
   const productIds = [...wanted.keys()];
 
-  const [products, method, member] = await Promise.all([
+  const [products, method, member, tenant] = await Promise.all([
     db.product.findMany({
       where: { id: { in: productIds }, tenantId, isActive: true },
       select: { id: true, name: true, salePrice: true, quantity: true },
     }),
     db.paymentMethod.findFirst({
       where: { id: paymentMethodId, tenantId, isActive: true },
-      select: { id: true },
+      select: { id: true, name: true },
     }),
     memberId
-      ? db.member.findFirst({ where: { id: memberId, tenantId }, select: { id: true } })
+      ? db.member.findFirst({ where: { id: memberId, tenantId }, select: { id: true, name: true } })
       : Promise.resolve(null),
+    db.tenant.findUniqueOrThrow({
+      where: { id: tenantId },
+      select: { name: true, location: true },
+    }),
   ]);
 
   if (!method) return { error: "That payment method is not available." };
@@ -102,7 +108,7 @@ export async function createSale(input: unknown): Promise<SaleState> {
 
   const total = subtotal - discount;
 
-  const invoiceNumber = await db.$transaction(async (tx) => {
+  const saved = await db.$transaction(async (tx) => {
     // Every number is read and compared numerically. A `orderBy: number desc`
     // would sort as text and pick the wrong row - see highestSequence above.
     const existing = await tx.retailInvoice.findMany({
@@ -131,7 +137,15 @@ export async function createSale(input: unknown): Promise<SaleState> {
           })),
         },
       },
-      select: { id: true, number: true },
+      select: {
+        id: true,
+        number: true,
+        soldAt: true,
+        subtotal: true,
+        discount: true,
+        total: true,
+        lines: { select: { productId: true, quantity: true, unitPrice: true, lineTotal: true } },
+      },
     });
 
     for (const line of priced) {
@@ -151,12 +165,33 @@ export async function createSale(input: unknown): Promise<SaleState> {
       });
     }
 
-    return invoice.number;
+    return invoice;
   });
 
   revalidatePath("/app/invoices");
   revalidatePath("/app/inventory");
+  revalidatePath("/app/payment-methods");
   revalidatePath("/app");
 
-  return { ok: true, invoiceNumber };
+  return {
+    ok: true,
+    invoiceNumber: saved.number,
+    invoice: {
+      number: saved.number,
+      soldAt: saved.soldAt.toISOString(),
+      businessName: tenant.name,
+      location: tenant.location,
+      customer: member?.name ?? "Walk-in customer",
+      paymentMethod: method.name,
+      subtotal: saved.subtotal.toString(),
+      discount: saved.discount.toString(),
+      total: saved.total.toString(),
+      lines: saved.lines.map((line) => ({
+        name: products.find((product) => product.id === line.productId)!.name,
+        quantity: line.quantity,
+        unitPrice: line.unitPrice.toString(),
+        total: line.lineTotal.toString(),
+      })),
+    },
+  };
 }
