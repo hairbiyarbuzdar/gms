@@ -11,7 +11,7 @@ async function main() {
       email: z.email().trim().toLowerCase(),
       password: z
         .string()
-        .min(12, "Password must be at least 12 characters.")
+        .min(8, "Password must be at least 8 characters.")
         .refine(
           (value) => Buffer.byteLength(value, "utf8") <= 72,
           "Password must be at most 72 UTF-8 bytes."

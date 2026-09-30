@@ -268,7 +268,7 @@ After deploying the latest code, run from the app directory on the VPS:
 
 ```bash
 read -r -p "Admin email: " admin_email
-read -r -s -p "Admin password (12+ characters): " admin_password
+read -r -s -p "Admin password (8+ characters): " admin_password
 printf '\n'
 ADMIN_EMAIL="$admin_email" ADMIN_PASSWORD="$admin_password" npm run db:create-admin
 unset admin_email admin_password
@@ -277,4 +277,4 @@ unset admin_email admin_password
 This creates an active `ADMIN` account, with no tenant assigned. It uses the VPS
 `.env` database connection, hashes the password, and refuses to overwrite an
 existing email. It does not create a Superadmin. Sign in at `/login` to reach
-`/admin`. Passwords must be at least 12 characters and at most 72 UTF-8 bytes.
+`/admin`. Passwords must be at least 8 characters and at most 72 UTF-8 bytes.
