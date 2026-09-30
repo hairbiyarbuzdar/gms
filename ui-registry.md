@@ -88,3 +88,10 @@ Last updated: 2026-09-30
 | Empty state | existing History icon, centered text, bordered card |
 
 Pattern notes: Read-only Admin/Supervisor log across gym locations; require ADMIN, not SUPERADMIN. Sort newest first, 25 entries per page. Search, action, and gym filters persist in URL. Show Pakistan time and human-readable actions. New memberships, renewals, invoice creation/edits/deletions, expenses, inventory, suppliers, purchases, payment methods, transfers, packages, and extras write activity atomically. Summarize only intentional metadata fields rather than rendering arbitrary stored JSON. Older unlogged actions are not fabricated.
+
+## Login password visibility
+
+File: src/app/(auth)/login/login-form.tsx
+Last updated: 2026-09-30
+
+Pattern notes: Passwords start hidden. A right-aligned Lucide Eye/EyeOff button toggles visibility without submitting the form. Use a 40px target, text-muted-foreground with hover:text-primary, visible keyboard focus, a Show/Hide password accessible label, and pr-12 input padding.
