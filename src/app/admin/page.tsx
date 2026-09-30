@@ -3,7 +3,8 @@ import { requireRole } from "@/lib/guards";
 import { db } from "@/lib/db";
 import { PlatformShell } from "@/components/platform-shell";
 import { getAdminDashboardStats } from "@/app/app/dashboard-data";
-import { formatMoney } from "@/lib/format";
+import { DashboardView } from "@/components/dashboard-view";
+import { AdminBranchAction } from "@/components/admin-branch-action";
 
 export default async function AdminPage() {
   const user = await requireRole("ADMIN");
@@ -20,60 +21,97 @@ export default async function AdminPage() {
     }),
     getAdminDashboardStats(),
   ]);
-  const cards = [
-    ["Active memberships", stats.activeMembers],
-    ["Renewals due this week", stats.renewalsDueThisWeek],
-    ["Overdue renewals", stats.renewalsOverdue],
-    ["Revenue today", formatMoney(stats.revenueToday)],
-    ["Revenue this month", formatMoney(stats.revenueThisMonth)],
-    ["Expenses this month", formatMoney(stats.expensesThisMonth)],
-    ["Low stock products", stats.lowStockCount],
-  ];
   return (
     <PlatformShell role="Admin" userEmail={user.email ?? ""} home="/admin">
-      <main className="mx-auto w-full max-w-[1440px] px-4 py-8 md:px-8">
-        <h1 className="text-2xl font-semibold">All branches</h1>
-        <p className="text-muted-foreground mt-2 text-sm">
-          View every branch from the modules above. Open a branch to create, edit, delete, or print
-          its records.
-        </p>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {cards.map(([label, value]) => (
-            <section key={label} className="border-border bg-card rounded border p-5">
-              <p className="text-muted-foreground text-sm">{label}</p>
-              <p className="mt-2 text-2xl font-semibold tabular-nums">{value}</p>
-            </section>
-          ))}
-        </div>
-        <h2 className="mt-8 text-lg font-semibold">Branch workspaces</h2>
-        <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {branches.map((branch) => (
-            <section key={branch.id} className="border-border bg-card rounded border p-5">
-              <h3 className="font-semibold">{branch.name}</h3>
-              <p className="text-muted-foreground text-sm">{branch.location}</p>
-              <p className="my-3 text-sm">
-                {branch._count.members} members �{" "}
-                {branch.status === "ACTIVE" ? "Active" : "Suspended"}
+      <DashboardView
+        admin
+        tenantName="All branches"
+        tenantLocation="Admin"
+        stats={stats}
+        quickActions={
+          <>
+            <AdminBranchAction
+              branches={branches}
+              module="memberships"
+              label="Add membership"
+              secondary
+            />
+            <AdminBranchAction branches={branches} module="invoices" label="New sale" secondary />
+            <AdminBranchAction
+              branches={branches}
+              module="expenses"
+              label="Record expense"
+              secondary
+            />
+            <AdminBranchAction
+              branches={branches}
+              module="memberships"
+              label="Scan barcode"
+              secondary
+            />
+          </>
+        }
+      >
+        <section className="mt-6" aria-labelledby="branches-heading">
+          <h2 id="branches-heading" className="label-caps text-muted-foreground">
+            Branches
+          </h2>
+          <div className="border-border bg-card mt-3 overflow-x-auto rounded-lg border">
+            <table className="w-full text-left text-[13px]">
+              <thead className="border-border bg-secondary border-b">
+                <tr>
+                  {["Branch", "Location", "Members", "Status", ""].map((label) => (
+                    <th
+                      key={label}
+                      className="label-caps text-muted-foreground px-4 py-3 font-medium whitespace-nowrap"
+                    >
+                      {label || <span className="sr-only">Actions</span>}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {branches.map((branch) => (
+                  <tr
+                    key={branch.id}
+                    className="border-border hover:bg-secondary/40 border-b last:border-0"
+                  >
+                    <td className="px-4 py-3 font-medium">{branch.name}</td>
+                    <td className="text-muted-foreground px-4 py-3">{branch.location}</td>
+                    <td className="data-mono px-4 py-3">{branch._count.members}</td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={
+                          branch.status === "ACTIVE"
+                            ? "bg-primary/5 text-primary rounded-sm px-2 py-1"
+                            : "bg-secondary text-muted-foreground rounded-sm px-2 py-1"
+                        }
+                      >
+                        {branch.status === "ACTIVE" ? "Active" : "Suspended"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {branch.status === "ACTIVE" && (
+                        <Link
+                          href={"/admin/branches/" + branch.id}
+                          className="border-border text-primary hover:border-primary hover:bg-primary/5 rounded border px-3 py-2 whitespace-nowrap transition-colors"
+                        >
+                          Open branch
+                        </Link>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!branches.length && (
+              <p className="text-muted-foreground px-6 py-16 text-center text-sm">
+                No branches have been created yet.
               </p>
-              {branch.status === "ACTIVE" ? (
-                <Link
-                  href={`/admin/branches/${branch.id}`}
-                  className="text-primary text-sm font-medium underline"
-                >
-                  Open branch
-                </Link>
-              ) : (
-                <p className="text-muted-foreground text-sm">
-                  Workspace unavailable while suspended
-                </p>
-              )}
-            </section>
-          ))}
-        </div>
-        {branches.length === 0 && (
-          <p className="text-muted-foreground mt-4">No branches have been created yet.</p>
-        )}
-      </main>
+            )}
+          </div>
+        </section>
+      </DashboardView>
     </PlatformShell>
   );
 }

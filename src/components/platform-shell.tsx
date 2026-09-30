@@ -1,4 +1,5 @@
-import { TENANT_NAV } from "@/lib/nav";
+import { TenantNav } from "@/components/tenant-nav";
+import { WorkspaceProvider } from "@/components/workspace-link";
 import Link from "next/link";
 import { Dumbbell } from "lucide-react";
 import { AppFooter } from "@/components/app-footer";
@@ -21,6 +22,21 @@ export function PlatformShell({
   home: string;
   children: React.ReactNode;
 }) {
+  if (home === "/admin")
+    return (
+      <WorkspaceProvider value="/admin">
+        <div className="flex min-h-svh flex-col">
+          <TenantNav
+            admin
+            tenantName="All branches"
+            userEmail={userEmail}
+            signOut={<SignOutButton />}
+          />
+          <div className="flex-1">{children}</div>
+          <AppFooter />
+        </div>
+      </WorkspaceProvider>
+    );
   return (
     <div className="flex min-h-svh flex-col">
       <header className="border-border bg-card sticky top-0 z-40 border-b">
@@ -28,15 +44,6 @@ export function PlatformShell({
           <Link href={home} aria-label="Home" className="text-primary flex shrink-0 items-center">
             <Dumbbell className="size-9" aria-hidden="true" />
           </Link>
-
-          {home === "/admin" && (
-            <Link
-              href="/admin/activity-log"
-              className="text-primary focus-visible:outline-primary text-sm font-medium hover:underline focus-visible:outline-2"
-            >
-              Activity Log
-            </Link>
-          )}
 
           <div className="ml-auto flex items-center gap-3">
             <div className="hidden text-right sm:block">
@@ -48,22 +55,6 @@ export function PlatformShell({
             <SignOutButton />
           </div>
         </div>
-        {home === "/admin" && (
-          <nav
-            aria-label="Admin modules"
-            className="mx-auto flex max-w-[1440px] gap-4 overflow-x-auto px-4 pb-3 text-sm md:px-8"
-          >
-            {TENANT_NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href.replace("/app", "/admin")}
-                className="text-primary whitespace-nowrap hover:underline"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        )}
       </header>
 
       <div className="flex-1">{children}</div>

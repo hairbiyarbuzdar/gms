@@ -3,14 +3,16 @@
 import Link, { useWorkspaceBase } from "@/components/workspace-link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Dumbbell, Menu, X } from "lucide-react";
+import { Dumbbell, Menu, X, ScrollText } from "lucide-react";
 import { TENANT_NAV, isActiveNav } from "@/lib/nav";
 
 export function TenantNav({
   tenantName,
   userEmail,
   signOut,
+  admin = false,
 }: {
+  admin?: boolean;
   tenantName: string;
   userEmail: string;
   /** Rendered by the layout: sign-out is a server action. */
@@ -18,6 +20,9 @@ export function TenantNav({
 }) {
   const base = useWorkspaceBase();
   const pathname = "/app" + usePathname().slice(base.length);
+  const items = admin
+    ? [...TENANT_NAV, { href: "/app/activity-log", label: "Activity Log", icon: ScrollText }]
+    : TENANT_NAV;
   const [open, setOpen] = useState(false);
 
   return (
@@ -36,7 +41,7 @@ export function TenantNav({
           className="hidden min-w-0 flex-1 [scrollbar-width:none] items-center overflow-x-auto xl:flex [&::-webkit-scrollbar]:hidden"
           aria-label="Main"
         >
-          {TENANT_NAV.map((item) => {
+          {items.map((item) => {
             const active = isActiveNav(item.href, pathname);
             const Icon = item.icon;
             return (
@@ -92,7 +97,7 @@ export function TenantNav({
           className="border-border max-h-[calc(100svh-5rem)] overflow-y-auto border-t xl:hidden"
         >
           <ul className="mx-auto w-full max-w-[1440px] px-4 py-2 md:px-8">
-            {TENANT_NAV.map((item) => {
+            {items.map((item) => {
               const active = isActiveNav(item.href, pathname);
               const Icon = item.icon;
               return (

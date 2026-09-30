@@ -105,3 +105,14 @@ Files: src/app/admin/page.tsx, src/app/admin/[module]/page.tsx, src/app/app/layo
 - Changes happen in the familiar tenant screens. A persistent Admin / Branch banner identifies the write destination and links back to all branches.
 - Suspended branches remain visible in combined lists but do not offer a writable workspace.
 - Branch identity belongs to the URL, never a shared browser cookie, so multiple branch tabs remain independent.
+
+Tenant UI parity (2026-09-30): Admin and tenant now share `TenantNav` and `DashboardView`, including desktop icon tabs, active states, mobile menu, quick actions, StatCard grid, and monthly ledger. Admin module pages use PageHeader, header actions, a live-search toolbar, branch select, compact chevron pagination, and dataset tabs. Branch selection uses the existing Dialog primitives.
+
+| Property | Pattern |
+| --- | --- |
+| Table / toolbar | bg-card, border-border, rounded-lg |
+| Table header | bg-secondary, label-caps, text-muted-foreground |
+| Table cells | px-4 py-3, text-[13px]; data-mono and text-right for amounts |
+| Quick action | border-primary, bg-card, px-3 py-2, text-[13px], hover:bg-primary |
+| Primary action | bg-primary, text-primary-foreground, px-4 py-2.5, hover:bg-primary-hover |
+| Empty state | px-6 py-16, centered icon and muted guidance |
