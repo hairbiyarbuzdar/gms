@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { addMonths, format } from "date-fns";
 import {
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { formatMoney } from "@/lib/format";
 import { renewMembership, type ActionState } from "./actions";
+import { InvoiceDialog } from "../invoices/invoice-dialog";
 
 const inputClass =
   "w-full rounded border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary aria-invalid:border-destructive";
@@ -26,7 +27,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="rounded bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-70"
+      className="bg-primary text-primary-foreground hover:bg-primary-hover rounded px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-70"
     >
       {pending ? "Recording…" : "Record renewal"}
     </button>
@@ -52,9 +53,16 @@ export function RenewDialog({
 }) {
   const [state, formAction] = useActionState<ActionState, FormData>(renewMembership, {});
 
-  useEffect(() => {
-    if (state.ok) onOpenChange(false);
-  }, [state.ok, onOpenChange]);
+  if (state.ok && state.receipt) {
+    return (
+      <InvoiceDialog
+        key={state.receipt.number}
+        invoice={state.receipt}
+        open={open}
+        onOpenChange={onOpenChange}
+      />
+    );
+  }
 
   // The schedule moves to one month from today, not from the old due date.
   const nextDue = addMonths(new Date(), 1);
@@ -78,14 +86,14 @@ export function RenewDialog({
           {state.error && (
             <div
               role="alert"
-              className="rounded border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-[13px] text-destructive"
+              className="border-destructive/30 bg-destructive/5 text-destructive rounded border px-3 py-2.5 text-[13px]"
             >
               {state.error}
             </div>
           )}
 
           {extras.length > 0 && (
-            <dl className="rounded border border-border bg-secondary/50 px-3 py-2.5 text-[13px]">
+            <dl className="border-border bg-secondary/50 rounded border px-3 py-2.5 text-[13px]">
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Package fee</dt>
                 <dd className="data-mono">{formatMoney(packageFee)}</dd>
@@ -96,7 +104,7 @@ export function RenewDialog({
                   <dd className="data-mono">{formatMoney(x.fee)}</dd>
                 </div>
               ))}
-              <div className="mt-1 flex justify-between border-t border-border pt-1 font-medium">
+              <div className="border-border mt-1 flex justify-between border-t pt-1 font-medium">
                 <dt>Total</dt>
                 <dd className="data-mono">{formatMoney(defaultAmount)}</dd>
               </div>
@@ -104,7 +112,7 @@ export function RenewDialog({
           )}
 
           <div className="flex flex-col">
-            <label htmlFor="amount" className="label-caps mb-1 text-muted-foreground">
+            <label htmlFor="amount" className="label-caps text-muted-foreground mb-1">
               Amount (PKR)
             </label>
             <input
@@ -120,12 +128,12 @@ export function RenewDialog({
               className={inputClass}
             />
             {state.fieldErrors?.amount && (
-              <p className="mt-1 text-[13px] text-destructive">{state.fieldErrors.amount}</p>
+              <p className="text-destructive mt-1 text-[13px]">{state.fieldErrors.amount}</p>
             )}
           </div>
 
           <div className="flex flex-col">
-            <label htmlFor="paymentMethodId" className="label-caps mb-1 text-muted-foreground">
+            <label htmlFor="paymentMethodId" className="label-caps text-muted-foreground mb-1">
               Payment method
             </label>
             <select
@@ -143,22 +151,22 @@ export function RenewDialog({
               ))}
             </select>
             {state.fieldErrors?.paymentMethodId && (
-              <p className="mt-1 text-[13px] text-destructive">
+              <p className="text-destructive mt-1 text-[13px]">
                 {state.fieldErrors.paymentMethodId}
               </p>
             )}
           </div>
 
-          <p className="rounded border border-border bg-secondary px-3 py-2.5 text-[13px] leading-[18px] text-muted-foreground">
-            Next renewal moves to <strong>{format(nextDue, "dd MMM yyyy")}</strong> — one month
-            from today, not from the previous due date.
+          <p className="border-border bg-secondary text-muted-foreground rounded border px-3 py-2.5 text-[13px] leading-[18px]">
+            Next renewal moves to <strong>{format(nextDue, "dd MMM yyyy")}</strong> — one month from
+            today, not from the previous due date.
           </p>
 
           <DialogFooter>
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="rounded border border-border px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+              className="border-border text-muted-foreground hover:border-primary hover:text-primary rounded border px-4 py-2.5 text-sm transition-colors"
             >
               Cancel
             </button>

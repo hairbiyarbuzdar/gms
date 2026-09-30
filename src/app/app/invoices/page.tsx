@@ -71,6 +71,13 @@ export default async function InvoicesPage() {
         paymentMethods={paymentMethods}
       />
       <InvoiceHistory
+        products={products.map((product) => ({
+          id: product.id,
+          name: product.name,
+          salePrice: product.salePrice.toString(),
+        }))}
+        members={members}
+        paymentMethods={paymentMethods}
         invoices={invoices.map((invoice) => ({
           id: invoice.id,
           number: invoice.number,

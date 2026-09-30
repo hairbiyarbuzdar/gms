@@ -36,7 +36,9 @@ export function InvoiceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="border-border rounded border sm:max-w-[400px]">
         <DialogHeader>
-          <DialogTitle>Invoice {invoice.number}</DialogTitle>
+          <DialogTitle className="break-all">
+            {invoice.heading ?? "Invoice"} {invoice.number}
+          </DialogTitle>
           <DialogDescription>
             80 mm thermal receipt. Select your thermal printer and 80 mm paper, with headers and
             footers off.
@@ -44,7 +46,7 @@ export function InvoiceDialog({
         </DialogHeader>
         <iframe
           ref={frame}
-          title={`Invoice ${invoice.number} preview`}
+          title={`${invoice.heading ?? "Invoice"} ${invoice.number} preview`}
           srcDoc={document}
           onLoad={() => setReady(true)}
           className="border-border mx-auto h-[min(60vh,600px)] w-full max-w-[80mm] rounded border bg-white"

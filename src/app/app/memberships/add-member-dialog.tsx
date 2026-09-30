@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import {
   Dialog,
@@ -13,11 +13,9 @@ import {
 import { createMembership, type ActionState } from "./actions";
 import type { PackageOption } from "./data";
 import { BarcodeDialog, type BarcodeTarget } from "@/components/barcode-dialog";
-import {
-  MemberForm,
-  type ExtraOption,
-  type PaymentMethodOption,
-} from "./member-form";
+import { InvoiceDialog } from "../invoices/invoice-dialog";
+import type { InvoiceReceipt } from "../invoices/invoice-receipt";
+import { MemberForm, type ExtraOption, type PaymentMethodOption } from "./member-form";
 
 export function AddMemberDialog({
   packages,
@@ -29,26 +27,29 @@ export function AddMemberDialog({
   paymentMethods: PaymentMethodOption[];
 }) {
   const [open, setOpen] = useState(false);
-  const [state, formAction] = useActionState<ActionState, FormData>(createMembership, {});
   const formRef = useRef<HTMLFormElement>(null);
   const [justCreated, setJustCreated] = useState<BarcodeTarget | null>(null);
+  const [receipt, setReceipt] = useState<InvoiceReceipt | null>(null);
   // Remount the form after each successful add so its internal state resets.
   const [formKey, setFormKey] = useState(0);
 
-  useEffect(() => {
-    if (state.ok) {
+  const [state, formAction] = useActionState<ActionState, FormData>(async (previous, formData) => {
+    const result = await createMembership(previous, formData);
+    if (result.ok) {
+      setReceipt(result.receipt ?? null);
       setOpen(false);
       formRef.current?.reset();
-      setFormKey((k) => k + 1);
-      if (state.created) {
+      setFormKey((key) => key + 1);
+      if (result.created) {
         setJustCreated({
-          title: state.created.memberName,
-          barcode: state.created.barcode,
-          subtitle: state.created.packageName,
+          title: result.created.memberName,
+          barcode: result.created.barcode,
+          subtitle: result.created.packageName,
         });
       }
     }
-  }, [state.ok, state.created]);
+    return result;
+  }, {});
 
   const noPackages = packages.length === 0;
   const noMethods = paymentMethods.length === 0;
@@ -57,7 +58,7 @@ export function AddMemberDialog({
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <button className="flex items-center gap-2 rounded bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover">
+          <button className="bg-primary text-primary-foreground hover:bg-primary-hover flex items-center gap-2 rounded px-4 py-2.5 text-sm font-medium transition-colors">
             <Plus className="size-4" aria-hidden="true" />
             New member
           </button>
@@ -72,13 +73,13 @@ export function AddMemberDialog({
           </DialogHeader>
 
           {noPackages ? (
-            <div className="rounded border border-border bg-secondary px-3 py-3 text-[13px] leading-[18px] text-muted-foreground">
+            <div className="border-border bg-secondary text-muted-foreground rounded border px-3 py-3 text-[13px] leading-[18px]">
               No packages exist yet. Add a package before enrolling members.
             </div>
           ) : noMethods ? (
-            <div className="rounded border border-border bg-secondary px-3 py-3 text-[13px] leading-[18px] text-muted-foreground">
-              No payment methods exist yet. Add one before enrolling members so the
-              joining payment can be recorded.
+            <div className="border-border bg-secondary text-muted-foreground rounded border px-3 py-3 text-[13px] leading-[18px]">
+              No payment methods exist yet. Add one before enrolling members so the joining payment
+              can be recorded.
             </div>
           ) : (
             <MemberForm
@@ -95,9 +96,17 @@ export function AddMemberDialog({
         </DialogContent>
       </Dialog>
 
+      {receipt && (
+        <InvoiceDialog
+          key={receipt.number}
+          invoice={receipt}
+          open={true}
+          onOpenChange={(next) => !next && setReceipt(null)}
+        />
+      )}
       <BarcodeDialog
         target={justCreated}
-        open={justCreated !== null}
+        open={justCreated !== null && receipt === null}
         onOpenChange={(next) => !next && setJustCreated(null)}
         heading="Member added"
         description="Print the barcode now, or find it later from the member's row."

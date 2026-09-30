@@ -50,3 +50,25 @@ Last updated: 2026-09-29
 | Errors | text-[13px] text-destructive, role=alert |
 
 Pattern notes: Upload and webcam share one preview and the existing member photo field. Keep the previous photo until a replacement succeeds. Stop camera tracks on capture, cancel, upload, or unmount. Disable saving while preparing the photo; show an upload fallback when camera access fails.
+
+## Membership and renewal receipts
+
+Files: src/lib/membership-receipt.ts, src/app/app/memberships/add-member-dialog.tsx, src/app/app/memberships/renew-dialog.tsx
+Last updated: 2026-09-29
+
+Pattern notes: Reuse the checkout receipt modal and 80 mm thermal document. Print the saved payment amount with its unique payment reference, member ID, package, payment method, period start, and next renewal date. Payment receipts omit retail subtotal/discount rows. After joining, show the receipt first and then the existing barcode dialog. Keep the renewal dialog mounted when its last table row leaves the current filter.
+
+## Invoice history actions
+
+Files: src/app/app/invoices/invoice-history.tsx, src/app/app/invoices/invoice-edit-dialog.tsx
+Last updated: 2026-09-30
+
+| Property | Classes / pattern |
+| --- | --- |
+| Row actions | Text labels with Lucide icons; rounded border border-border; text-primary; destructive color for Delete |
+| Editor | Existing Dialog primitives, rounded border border-border, scrollable on small screens |
+| Inputs | border-input bg-background, rounded, focus:border-primary focus:ring-primary |
+| Errors | role=alert, text-destructive |
+| Loading | role=status; disable repeated actions while loading or saving |
+
+Pattern notes: Reuse the 80 mm invoice preview for history printing. Keep saved unit prices on existing invoice lines. Editing reconciles inventory deltas and derived payment balances; deletion requires an explicit confirmation and restores stock. Keep controls outside the print document. Search remains intact after editing or deleting.

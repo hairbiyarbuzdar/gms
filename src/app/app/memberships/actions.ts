@@ -10,7 +10,11 @@ import {
 } from "@/lib/validators/membership";
 import { deleteMemberPhoto, saveMemberPhoto } from "@/lib/member-photo";
 
+import { membershipReceipt } from "@/lib/membership-receipt";
+import type { InvoiceReceipt } from "../invoices/invoice-receipt";
+
 export type ActionState = {
+  receipt?: InvoiceReceipt;
   ok?: boolean;
   error?: string;
   fieldErrors?: Record<string, string>;
@@ -133,7 +137,7 @@ export async function createMembership(
   // First renewal: the date the user picked, else one month after joining.
   const firstRenewal = renewalDate ? new Date(renewalDate) : addMonths(joined, 1);
 
-  await db.$transaction(async (tx) => {
+  const receipt = await db.$transaction(async (tx) => {
     const member = await tx.member.create({
       data: {
         tenantId,
@@ -174,7 +178,7 @@ export async function createMembership(
 
     // The joining payment is the first renewal. It covers the period from
     // joining to one month later - the same window nextRenewalDate points at.
-    await tx.renewalPayment.create({
+    const payment = await tx.renewalPayment.create({
       data: {
         tenantId,
         membershipId: membership.id,
@@ -185,6 +189,7 @@ export async function createMembership(
         periodEnd: firstRenewal,
       },
     });
+    return membershipReceipt(tx, tenantId, payment.id, "Membership receipt");
   });
 
   revalidatePath("/app/memberships");
@@ -192,6 +197,7 @@ export async function createMembership(
   revalidatePath("/app");
   return {
     ok: true,
+    receipt,
     created: { memberName: name, barcode, packageName: pkg.name },
   };
 }
@@ -334,9 +340,7 @@ export type PaymentHistoryRow = {
  * The renewal payments recorded against one membership, newest first.
  * Used by the member details view.
  */
-export async function getMemberPayments(
-  membershipId: string
-): Promise<PaymentHistoryRow[]> {
+export async function getMemberPayments(membershipId: string): Promise<PaymentHistoryRow[]> {
   const { db, tenantId } = await tenantDb();
 
   // membershipId came from the client, so it is filtered by tenant here.
@@ -413,8 +417,8 @@ export async function renewMembership(
   const recordedAt = new Date();
   const nextRenewalDate = addMonths(recordedAt, 1);
 
-  await db.$transaction(async (tx) => {
-    await tx.renewalPayment.create({
+  const receipt = await db.$transaction(async (tx) => {
+    const payment = await tx.renewalPayment.create({
       data: {
         tenantId,
         membershipId: membership.id,
@@ -430,9 +434,11 @@ export async function renewMembership(
       where: { id: membership.id },
       data: { nextRenewalDate, status: "ACTIVE" },
     });
+    return membershipReceipt(tx, tenantId, payment.id, "Renewal receipt");
   });
 
   revalidatePath("/app/memberships");
+  revalidatePath("/app/payment-methods");
   revalidatePath("/app");
-  return { ok: true };
+  return { ok: true, receipt };
 }

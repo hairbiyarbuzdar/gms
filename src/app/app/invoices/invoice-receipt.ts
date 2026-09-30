@@ -1,6 +1,9 @@
 import { formatDate, formatMoneyPrecise } from "@/lib/format";
 
 export type InvoiceReceipt = {
+  heading?: string;
+  details?: { label: string; value: string }[];
+  paymentOnly?: boolean;
   number: string;
   soldAt: string;
   businessName: string;
@@ -55,13 +58,14 @@ export function invoiceDocument(invoice: InvoiceReceipt): string {
   @media print { body { margin: 0; } }</style></head><body>
 <h1>${text(invoice.businessName)}</h1>
 ${invoice.location ? `<p class="muted">${text(invoice.location)}</p>` : ""}
-<h2>Invoice ${text(invoice.number)}</h2>
+<h2>${text(invoice.heading ?? "Invoice")} ${text(invoice.number)}</h2>
 <p class="muted">${text(formatDate(new Date(invoice.soldAt)))}</p>
 <p><strong>Customer:</strong> ${text(invoice.customer)}</p>
 <p><strong>Payment method:</strong> ${text(invoice.paymentMethod)}</p>
+${(invoice.details ?? []).map((detail) => `<p><strong>${text(detail.label)}:</strong> ${text(detail.value)}</p>`).join("")}
 <table aria-label="Invoice items"><thead><tr><th scope="col">Item</th><th scope="col">Amount</th></tr></thead><tbody>
 ${invoice.lines.map((line) => `<tr><td>${text(line.name)}<span class="quantity">${text(String(line.quantity))} × ${money(line.unitPrice)}</span></td><td>${money(line.total)}</td></tr>`).join("")}
 </tbody></table>
-<dl><div><dt>Subtotal</dt><dd>${money(invoice.subtotal)}</dd></div><div><dt>Discount</dt><dd>${money(invoice.discount)}</dd></div><div class="total"><dt>Total paid</dt><dd>${money(invoice.total)}</dd></div></dl>
+<dl>${invoice.paymentOnly ? "" : `<div><dt>Subtotal</dt><dd>${money(invoice.subtotal)}</dd></div><div><dt>Discount</dt><dd>${money(invoice.discount)}</dd></div>`}<div class="total"><dt>Total paid</dt><dd>${money(invoice.total)}</dd></div></dl>
 </body></html>`;
 }

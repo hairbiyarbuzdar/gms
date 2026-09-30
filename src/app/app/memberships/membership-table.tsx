@@ -65,21 +65,24 @@ export function MembershipTable({
 
   return (
     <>
-      <div className="overflow-x-auto rounded-lg border border-border bg-card">
+      <div
+        hidden={rows.length === 0}
+        className="border-border bg-card overflow-x-auto rounded-lg border"
+      >
         <table className="w-full min-w-[820px] border-collapse text-left">
           <thead>
-            <tr className="border-b border-border bg-primary-tint">
-              <th className="label-caps px-4 py-3 text-muted-foreground">Member</th>
-              <th className="label-caps px-4 py-3 text-muted-foreground">Package</th>
-              <th className="label-caps px-4 py-3 text-muted-foreground">Joined</th>
-              <th className="label-caps px-4 py-3 text-muted-foreground">Next renewal</th>
-              <th className="label-caps px-4 py-3 text-muted-foreground">Status</th>
-              <th className="label-caps px-4 py-3 text-right text-muted-foreground">Actions</th>
+            <tr className="border-border bg-primary-tint border-b">
+              <th className="label-caps text-muted-foreground px-4 py-3">Member</th>
+              <th className="label-caps text-muted-foreground px-4 py-3">Package</th>
+              <th className="label-caps text-muted-foreground px-4 py-3">Joined</th>
+              <th className="label-caps text-muted-foreground px-4 py-3">Next renewal</th>
+              <th className="label-caps text-muted-foreground px-4 py-3">Status</th>
+              <th className="label-caps text-muted-foreground px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.id} className="border-b border-border last:border-0">
+              <tr key={row.id} className="border-border border-b last:border-0">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     {row.memberPhotoUrl ? (
@@ -88,7 +91,7 @@ export function MembershipTable({
                         onClick={() =>
                           setViewingPhoto({ url: row.memberPhotoUrl!, name: row.memberName })
                         }
-                        className="shrink-0 rounded ring-offset-2 transition hover:ring-2 hover:ring-primary"
+                        className="hover:ring-primary shrink-0 rounded ring-offset-2 transition hover:ring-2"
                         title="View photo"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -101,7 +104,7 @@ export function MembershipTable({
                     ) : (
                       <span
                         aria-hidden="true"
-                        className="flex size-9 shrink-0 items-center justify-center rounded bg-secondary text-[11px] font-bold text-muted-foreground"
+                        className="bg-secondary text-muted-foreground flex size-9 shrink-0 items-center justify-center rounded text-[11px] font-bold"
                       >
                         {initials(row.memberName)}
                       </span>
@@ -110,15 +113,15 @@ export function MembershipTable({
                       <button
                         type="button"
                         onClick={() => setViewing(row)}
-                        className="block max-w-full truncate text-left text-sm font-medium text-foreground transition-colors hover:text-primary hover:underline"
+                        className="text-foreground hover:text-primary block max-w-full truncate text-left text-sm font-medium transition-colors hover:underline"
                       >
                         {row.memberName}
                       </button>
-                      <p className="data-mono truncate text-[12px] text-muted-foreground">
+                      <p className="data-mono text-muted-foreground truncate text-[12px]">
                         {row.memberBarcode}
                       </p>
                       {row.memberCnic && (
-                        <p className="data-mono truncate text-[11px] text-muted-foreground">
+                        <p className="data-mono text-muted-foreground truncate text-[11px]">
                           {formatCnic(row.memberCnic)}
                         </p>
                       )}
@@ -127,17 +130,16 @@ export function MembershipTable({
                 </td>
                 <td className="px-4 py-3">
                   <p className="text-sm">{row.packageName}</p>
-                  <p className="data-mono text-[12px] text-muted-foreground">
+                  <p className="data-mono text-muted-foreground text-[12px]">
                     {formatMoney(row.packagePrice)}
                   </p>
                   {row.extras.length > 0 && (
-                    <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      + {row.extras.map((x) => x.name).join(", ")} (
-                      {formatMoney(row.extrasTotal)})
+                    <p className="text-muted-foreground mt-0.5 text-[11px]">
+                      + {row.extras.map((x) => x.name).join(", ")} ({formatMoney(row.extrasTotal)})
                     </p>
                   )}
                 </td>
-                <td className="data-mono px-4 py-3 text-muted-foreground">
+                <td className="data-mono text-muted-foreground px-4 py-3">
                   {formatDate(row.joinDate)}
                 </td>
                 <td className="data-mono px-4 py-3">{formatDate(row.nextRenewalDate)}</td>
@@ -156,7 +158,7 @@ export function MembershipTable({
                         })
                       }
                       title="Show barcode"
-                      className="rounded border border-border p-1.5 text-primary transition-colors hover:border-primary hover:bg-primary-tint"
+                      className="border-border text-primary hover:border-primary hover:bg-primary-tint rounded border p-1.5 transition-colors"
                     >
                       <Barcode className="size-4" aria-hidden="true" />
                       <span className="sr-only">Barcode for {row.memberName}</span>
@@ -165,7 +167,7 @@ export function MembershipTable({
                       type="button"
                       onClick={() => setEditing(row)}
                       title="Edit member"
-                      className="rounded border border-border p-1.5 text-primary transition-colors hover:border-primary hover:bg-primary-tint"
+                      className="border-border text-primary hover:border-primary hover:bg-primary-tint rounded border p-1.5 transition-colors"
                     >
                       <Pencil className="size-4" aria-hidden="true" />
                       <span className="sr-only">Edit {row.memberName}</span>
@@ -175,7 +177,7 @@ export function MembershipTable({
                       onClick={() => setRenewing(row)}
                       disabled={!canRenew}
                       title={canRenew ? undefined : "Add a payment method first"}
-                      className="rounded bg-primary px-3 py-1.5 text-[13px] font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                      className="bg-primary text-primary-foreground hover:bg-primary-hover rounded px-3 py-1.5 text-[13px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Renew
                     </button>
@@ -195,10 +197,7 @@ export function MembershipTable({
         description="Scan this code to look the member up at renewal time."
       />
 
-      <PhotoViewer
-        photo={viewingPhoto}
-        onClose={() => setViewingPhoto(null)}
-      />
+      <PhotoViewer photo={viewingPhoto} onClose={() => setViewingPhoto(null)} />
 
       {renewing && (
         <RenewDialog

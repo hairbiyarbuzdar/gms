@@ -115,8 +115,19 @@ export async function createSale(input: unknown): Promise<SaleState> {
       where: { tenantId },
       select: { number: true },
     });
-
-    const number = formatNumber(highestSequence(existing.map((row) => row.number)) + 1);
+    // Deleting the most recent invoice must not reuse its printed number.
+    const deleted = await tx.auditLog.findMany({
+      where: { tenantId, action: "RETAIL_INVOICE_DELETE" },
+      select: { meta: true },
+    });
+    const retiredNumbers = deleted.flatMap(({ meta }) =>
+      meta && typeof meta === "object" && !Array.isArray(meta) && typeof meta.number === "string"
+        ? [meta.number]
+        : []
+    );
+    const number = formatNumber(
+      highestSequence([...existing.map((row) => row.number), ...retiredNumbers]) + 1
+    );
 
     const invoice = await tx.retailInvoice.create({
       data: {

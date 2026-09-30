@@ -3,7 +3,14 @@ import { ChevronLeft, ChevronRight, Users } from "lucide-react";
 import { getTenantContext } from "@/lib/tenant-context";
 import { tenantDb } from "@/lib/tenant-db";
 import { PageHeader } from "@/components/page-header";
-import { getAllExtras, getActiveExtras, getAllPackages, getMemberships, parseTab, PAGE_SIZE } from "./data";
+import {
+  getAllExtras,
+  getActiveExtras,
+  getAllPackages,
+  getMemberships,
+  parseTab,
+  PAGE_SIZE,
+} from "./data";
 import { AddMemberDialog } from "./add-member-dialog";
 import { PackagesDialog } from "./packages-dialog";
 import { ExtrasDialog } from "./extras-dialog";
@@ -86,7 +93,7 @@ export default async function MembershipsPage({
       />
 
       {/* Tabs */}
-      <div className="mt-4 flex gap-6 overflow-x-auto border-b border-border">
+      <div className="border-border mt-4 flex gap-6 overflow-x-auto border-b">
         {TABS.map((t) => {
           const active = t.key === tab;
           const count = list.counts[t.key];
@@ -97,8 +104,8 @@ export default async function MembershipsPage({
               aria-current={active ? "page" : undefined}
               className={`flex shrink-0 items-center gap-2 border-b-[3px] pb-3 text-sm transition-colors ${
                 active
-                  ? "border-primary font-medium text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  ? "border-primary text-primary font-medium"
+                  : "text-muted-foreground hover:text-foreground border-transparent"
               }`}
             >
               {t.label}
@@ -119,12 +126,10 @@ export default async function MembershipsPage({
       </div>
 
       {/* Toolbar */}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-4">
+      <div className="border-border bg-card mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4">
         <SearchBox tab={tab} />
-        <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
-          <span>
-            {list.total === 0 ? "No results" : `Showing ${from}–${to} of ${list.total}`}
-          </span>
+        <div className="text-muted-foreground flex items-center gap-2 text-[13px]">
+          <span>{list.total === 0 ? "No results" : `Showing ${from}–${to} of ${list.total}`}</span>
           <div className="ml-2 flex gap-1">
             <PageLink
               href={href({ page: list.page - 1 })}
@@ -147,12 +152,12 @@ export default async function MembershipsPage({
       {/* Table */}
       <div className="mt-4">
         {list.rows.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card px-6 py-16 text-center">
-            <Users className="size-8 text-muted-foreground/50" aria-hidden="true" />
+          <div className="border-border bg-card flex flex-col items-center justify-center rounded-lg border px-6 py-16 text-center">
+            <Users className="text-muted-foreground/50 size-8" aria-hidden="true" />
             <p className="mt-3 text-sm font-medium">
               {query ? "No members match that search" : "Nothing here yet"}
             </p>
-            <p className="mt-1 text-[13px] leading-[18px] text-muted-foreground">
+            <p className="text-muted-foreground mt-1 text-[13px] leading-[18px]">
               {query
                 ? "Try a different name, phone number, or barcode."
                 : tab === "active"
@@ -160,18 +165,17 @@ export default async function MembershipsPage({
                   : "Nothing in this tab right now."}
             </p>
           </div>
-        ) : (
-          <MembershipTable
-            rows={list.rows}
-            paymentMethods={paymentMethods}
-            packages={editablePackages}
-            extras={activeExtras}
-          />
-        )}
+        ) : null}
+        <MembershipTable
+          rows={list.rows}
+          paymentMethods={paymentMethods}
+          packages={editablePackages}
+          extras={activeExtras}
+        />
       </div>
 
       {paymentMethods.length === 0 && list.rows.length > 0 && (
-        <p className="mt-3 text-[13px] leading-[18px] text-muted-foreground">
+        <p className="text-muted-foreground mt-3 text-[13px] leading-[18px]">
           Renewals need a payment method.{" "}
           <Link href="/app/payment-methods" className="text-primary hover:underline">
             Add one
@@ -206,7 +210,11 @@ function PageLink({
   }
 
   return (
-    <Link href={href} aria-label={label} className={`${className} hover:border-primary hover:text-primary`}>
+    <Link
+      href={href}
+      aria-label={label}
+      className={`${className} hover:border-primary hover:text-primary`}
+    >
       {children}
     </Link>
   );
