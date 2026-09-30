@@ -95,3 +95,13 @@ File: src/app/(auth)/login/login-form.tsx
 Last updated: 2026-09-30
 
 Pattern notes: Passwords start hidden. A right-aligned Lucide Eye/EyeOff button toggles visibility without submitting the form. Use a 40px target, text-muted-foreground with hover:text-primary, visible keyboard focus, a Show/Hide password accessible label, and pr-12 input padding.
+
+## Admin branch overview and workspaces
+
+Files: src/app/admin/page.tsx, src/app/admin/[module]/page.tsx, src/app/app/layout.tsx
+
+- Admin uses the tenant module order, a 1440px content width, existing card borders, muted labels, and primary-color links.
+- Combined tables keep Branch as the first column and expose search, branch filtering, pagination, and an Open branch action.
+- Changes happen in the familiar tenant screens. A persistent Admin / Branch banner identifies the write destination and links back to all branches.
+- Suspended branches remain visible in combined lists but do not offer a writable workspace.
+- Branch identity belongs to the URL, never a shared browser cookie, so multiple branch tabs remain independent.

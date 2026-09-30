@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useWorkspaceBase } from "@/components/workspace-link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Dumbbell, Menu, X } from "lucide-react";
@@ -16,17 +16,14 @@ export function TenantNav({
   /** Rendered by the layout: sign-out is a server action. */
   signOut: React.ReactNode;
 }) {
-  const pathname = usePathname();
+  const base = useWorkspaceBase();
+  const pathname = "/app" + usePathname().slice(base.length);
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-card">
+    <header className="border-border bg-card sticky top-0 z-40 border-b">
       <div className="mx-auto flex h-20 w-full max-w-[1440px] items-center gap-4 px-4 md:px-8">
-        <Link
-          href="/app"
-          aria-label="Home"
-          className="flex shrink-0 items-center text-primary"
-        >
+        <Link href="/app" aria-label="Home" className="text-primary flex shrink-0 items-center">
           <Dumbbell className="size-9" aria-hidden="true" />
         </Link>
 
@@ -36,7 +33,7 @@ export function TenantNav({
           them overlap is worse than letting them scroll.
         */}
         <nav
-          className="hidden min-w-0 flex-1 items-center overflow-x-auto xl:flex [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="hidden min-w-0 flex-1 [scrollbar-width:none] items-center overflow-x-auto xl:flex [&::-webkit-scrollbar]:hidden"
           aria-label="Main"
         >
           {TENANT_NAV.map((item) => {
@@ -47,7 +44,7 @@ export function TenantNav({
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded px-2 py-2 text-[13px] font-medium transition-colors ${
+                className={`flex shrink-0 items-center gap-1.5 rounded px-2 py-2 text-[13px] font-medium whitespace-nowrap transition-colors ${
                   active
                     ? "bg-primary/5 text-primary"
                     : "text-muted-foreground hover:text-foreground"
@@ -77,7 +74,7 @@ export function TenantNav({
             aria-expanded={open}
             aria-controls="tenant-mobile-nav"
             aria-label={open ? "Close menu" : "Open menu"}
-            className="rounded border border-border p-2 text-muted-foreground transition-colors hover:border-primary hover:text-primary xl:hidden"
+            className="border-border text-muted-foreground hover:border-primary hover:text-primary rounded border p-2 transition-colors xl:hidden"
           >
             {open ? (
               <X className="size-5" aria-hidden="true" />
@@ -92,7 +89,7 @@ export function TenantNav({
         <nav
           id="tenant-mobile-nav"
           aria-label="Main"
-          className="max-h-[calc(100svh-5rem)] overflow-y-auto border-t border-border xl:hidden"
+          className="border-border max-h-[calc(100svh-5rem)] overflow-y-auto border-t xl:hidden"
         >
           <ul className="mx-auto w-full max-w-[1440px] px-4 py-2 md:px-8">
             {TENANT_NAV.map((item) => {
@@ -106,8 +103,8 @@ export function TenantNav({
                     aria-current={active ? "page" : undefined}
                     className={`flex items-center gap-3 border-l-4 py-3 pl-3 text-sm transition-colors ${
                       active
-                        ? "border-primary font-medium text-primary"
-                        : "border-transparent text-muted-foreground hover:text-foreground"
+                        ? "border-primary text-primary font-medium"
+                        : "text-muted-foreground hover:text-foreground border-transparent"
                     }`}
                   >
                     <Icon className="size-4" aria-hidden="true" />
@@ -118,9 +115,9 @@ export function TenantNav({
             })}
           </ul>
 
-          <div className="mx-auto w-full max-w-[1440px] border-t border-border px-4 py-4 md:px-8">
+          <div className="border-border mx-auto w-full max-w-[1440px] border-t px-4 py-4 md:px-8">
             <p className="truncate text-[13px] font-medium">{tenantName}</p>
-            <p className="mb-3 truncate text-[12px] text-muted-foreground">{userEmail}</p>
+            <p className="text-muted-foreground mb-3 truncate text-[12px]">{userEmail}</p>
             {signOut}
           </div>
         </nav>

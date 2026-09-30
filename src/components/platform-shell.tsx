@@ -1,3 +1,4 @@
+import { TENANT_NAV } from "@/lib/nav";
 import Link from "next/link";
 import { Dumbbell } from "lucide-react";
 import { AppFooter } from "@/components/app-footer";
@@ -6,8 +7,8 @@ import { SignOutButton } from "@/components/sign-out-button";
 /**
  * Sticky shell for the platform surfaces (superadmin, admin).
  *
- * Same top-and-bottom sticky arrangement as the tenant portal, minus the
- * module nav - these surfaces are single-screen.
+ * Same top-and-bottom sticky arrangement as the tenant portal. Admin includes
+ * the tenant module navigation for its combined branch views.
  */
 export function PlatformShell({
   role,
@@ -47,6 +48,22 @@ export function PlatformShell({
             <SignOutButton />
           </div>
         </div>
+        {home === "/admin" && (
+          <nav
+            aria-label="Admin modules"
+            className="mx-auto flex max-w-[1440px] gap-4 overflow-x-auto px-4 pb-3 text-sm md:px-8"
+          >
+            {TENANT_NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href.replace("/app", "/admin")}
+                className="text-primary whitespace-nowrap hover:underline"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        )}
       </header>
 
       <div className="flex-1">{children}</div>

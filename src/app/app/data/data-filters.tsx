@@ -1,5 +1,6 @@
 "use client";
 
+import { useWorkspaceBase } from "@/components/workspace-link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Search, X } from "lucide-react";
@@ -8,14 +9,9 @@ import { Search, X } from "lucide-react";
  * Search and date-range controls, written to the URL so a filtered view is
  * shareable, survives a reload, and drives the CSV export with the same terms.
  */
-export function DataFilters({
-  dataset,
-  dateLabel,
-}: {
-  dataset: string;
-  dateLabel?: string;
-}) {
+export function DataFilters({ dataset, dateLabel }: { dataset: string; dateLabel?: string }) {
   const router = useRouter();
+  const base = useWorkspaceBase();
   const params = useSearchParams();
   const [, startTransition] = useTransition();
 
@@ -23,16 +19,10 @@ export function DataFilters({
   const from = params.get("from") ?? "";
   const to = params.get("to") ?? "";
 
-  // Reset the box when switching datasets, which clears the query too.
-  useEffect(() => {
-    setSearch(params.get("q") ?? "");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataset]);
-
   function push(next: URLSearchParams) {
     next.set("dataset", dataset);
     next.delete("page");
-    startTransition(() => router.replace(`/app/data?${next}`, { scroll: false }));
+    startTransition(() => router.replace(`${base}/data?${next}`, { scroll: false }));
   }
 
   // Debounce the search so typing does not fire a request per keystroke.
@@ -63,11 +53,11 @@ export function DataFilters({
   return (
     <div className="flex flex-wrap items-end gap-3">
       <div className="relative min-w-0 flex-1 sm:max-w-xs">
-        <label htmlFor="data-search" className="label-caps mb-1 block text-muted-foreground">
+        <label htmlFor="data-search" className="label-caps text-muted-foreground mb-1 block">
           Search
         </label>
         <Search
-          className="pointer-events-none absolute left-3 top-[calc(50%+8px)] size-4 -translate-y-1/2 text-muted-foreground/60"
+          className="text-muted-foreground/60 pointer-events-none absolute top-[calc(50%+8px)] left-3 size-4 -translate-y-1/2"
           aria-hidden="true"
         />
         <input
@@ -76,14 +66,14 @@ export function DataFilters({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search this table…"
-          className="w-full rounded border border-input bg-background py-2 pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-primary focus:ring-1 focus:ring-primary"
+          className="border-input bg-background placeholder:text-muted-foreground/60 focus:border-primary focus:ring-primary w-full rounded border py-2 pr-3 pl-9 text-sm transition-colors outline-none focus:ring-1"
         />
       </div>
 
       {dateLabel && (
         <>
           <div>
-            <label htmlFor="data-from" className="label-caps mb-1 block text-muted-foreground">
+            <label htmlFor="data-from" className="label-caps text-muted-foreground mb-1 block">
               {dateLabel} from
             </label>
             <input
@@ -91,11 +81,11 @@ export function DataFilters({
               type="date"
               value={from}
               onChange={(e) => setDate("from", e.target.value)}
-              className="rounded border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+              className="border-input bg-background focus:border-primary focus:ring-primary rounded border px-3 py-2 text-sm transition-colors outline-none focus:ring-1"
             />
           </div>
           <div>
-            <label htmlFor="data-to" className="label-caps mb-1 block text-muted-foreground">
+            <label htmlFor="data-to" className="label-caps text-muted-foreground mb-1 block">
               To
             </label>
             <input
@@ -103,7 +93,7 @@ export function DataFilters({
               type="date"
               value={to}
               onChange={(e) => setDate("to", e.target.value)}
-              className="rounded border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+              className="border-input bg-background focus:border-primary focus:ring-primary rounded border px-3 py-2 text-sm transition-colors outline-none focus:ring-1"
             />
           </div>
         </>
@@ -115,10 +105,10 @@ export function DataFilters({
           onClick={() => {
             setSearch("");
             startTransition(() =>
-              router.replace(`/app/data?dataset=${dataset}`, { scroll: false })
+              router.replace(`${base}/data?dataset=${dataset}`, { scroll: false })
             );
           }}
-          className="flex items-center gap-1.5 rounded border border-border px-3 py-2 text-[13px] text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+          className="border-border text-muted-foreground hover:border-primary hover:text-primary flex items-center gap-1.5 rounded border px-3 py-2 text-[13px] transition-colors"
         >
           <X className="size-3.5" aria-hidden="true" />
           Clear

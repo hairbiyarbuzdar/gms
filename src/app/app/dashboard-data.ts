@@ -1,3 +1,5 @@
+import { db } from "@/lib/db";
+import { requireRole } from "@/lib/guards";
 import { tenantDb } from "@/lib/tenant-db";
 import {
   startOfDaysFromNow,
@@ -33,8 +35,14 @@ function sum(value: { toString(): string } | null | undefined): number {
  * tenant's day rather than the server's.
  */
 export async function getDashboardStats(): Promise<DashboardStats> {
-  const { db, tenantId } = await tenantDb();
-
+  const { tenantId } = await tenantDb();
+  return queryStats(tenantId);
+}
+export async function getAdminDashboardStats() {
+  await requireRole("ADMIN");
+  return queryStats();
+}
+async function queryStats(tenantId?: string): Promise<DashboardStats> {
   const now = new Date();
   const todayStart = startOfToday(now);
   const tomorrowStart = startOfTomorrow(now);
@@ -99,15 +107,10 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       _sum: { amount: true },
     }),
 
-    // Prisma cannot compare two columns in a where clause, so this counts
-    // at-or-below-reorder-level in SQL.
-    db.$queryRaw<[{ count: bigint }]>`
-      SELECT COUNT(*)::bigint AS count
-      FROM "Product"
-      WHERE "tenantId" = ${tenantId}
-        AND "isActive" = true
-        AND "quantity" <= "reorderLevel"
-    `,
+    // Compare stock with each product's own reorder level in the database.
+    db.product.count({
+      where: { tenantId, isActive: true, quantity: { lte: db.product.fields.reorderLevel } },
+    }),
   ]);
 
   const membershipRevenueThisMonth = sum(renewalMonth._sum.amount);
@@ -122,6 +125,6 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     membershipRevenueThisMonth,
     retailRevenueThisMonth,
     expensesThisMonth: sum(expenseMonth._sum.amount),
-    lowStockCount: Number(lowStock[0]?.count ?? 0),
+    lowStockCount: lowStock,
   };
 }

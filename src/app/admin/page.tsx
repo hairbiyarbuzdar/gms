@@ -1,30 +1,78 @@
-import { requireRole } from "@/lib/guards";
-import { PlatformShell } from "@/components/platform-shell";
 import Link from "next/link";
+import { requireRole } from "@/lib/guards";
+import { db } from "@/lib/db";
+import { PlatformShell } from "@/components/platform-shell";
+import { getAdminDashboardStats } from "@/app/app/dashboard-data";
+import { formatMoney } from "@/lib/format";
 
 export default async function AdminPage() {
   const user = await requireRole("ADMIN");
-
+  const [branches, stats] = await Promise.all([
+    db.tenant.findMany({
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        location: true,
+        status: true,
+        _count: { select: { members: true } },
+      },
+    }),
+    getAdminDashboardStats(),
+  ]);
+  const cards = [
+    ["Active memberships", stats.activeMembers],
+    ["Renewals due this week", stats.renewalsDueThisWeek],
+    ["Overdue renewals", stats.renewalsOverdue],
+    ["Revenue today", formatMoney(stats.revenueToday)],
+    ["Revenue this month", formatMoney(stats.revenueThisMonth)],
+    ["Expenses this month", formatMoney(stats.expensesThisMonth)],
+    ["Low stock products", stats.lowStockCount],
+  ];
   return (
-    <PlatformShell role="Supervisor" userEmail={user.email ?? ""} home="/admin">
+    <PlatformShell role="Admin" userEmail={user.email ?? ""} home="/admin">
       <main className="mx-auto w-full max-w-[1440px] px-4 py-8 md:px-8">
-        <header className="border-border border-b pb-4">
-          <p className="label-caps text-muted-foreground">Supervisor</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">All Locations</h1>
-        </header>
-
-        <section className="border-border bg-card mt-6 rounded border p-5">
-          <h2 className="text-lg font-semibold">Activity across locations</h2>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Review memberships, renewals, invoices, expenses, inventory, and other recorded actions.
-          </p>
-          <Link
-            href="/admin/activity-log"
-            className="bg-primary text-primary-foreground hover:bg-primary-hover mt-4 inline-block rounded px-4 py-2.5 text-sm"
-          >
-            View activity log
-          </Link>
-        </section>
+        <h1 className="text-2xl font-semibold">All branches</h1>
+        <p className="text-muted-foreground mt-2 text-sm">
+          View every branch from the modules above. Open a branch to create, edit, delete, or print
+          its records.
+        </p>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {cards.map(([label, value]) => (
+            <section key={label} className="border-border bg-card rounded border p-5">
+              <p className="text-muted-foreground text-sm">{label}</p>
+              <p className="mt-2 text-2xl font-semibold tabular-nums">{value}</p>
+            </section>
+          ))}
+        </div>
+        <h2 className="mt-8 text-lg font-semibold">Branch workspaces</h2>
+        <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {branches.map((branch) => (
+            <section key={branch.id} className="border-border bg-card rounded border p-5">
+              <h3 className="font-semibold">{branch.name}</h3>
+              <p className="text-muted-foreground text-sm">{branch.location}</p>
+              <p className="my-3 text-sm">
+                {branch._count.members} members �{" "}
+                {branch.status === "ACTIVE" ? "Active" : "Suspended"}
+              </p>
+              {branch.status === "ACTIVE" ? (
+                <Link
+                  href={`/admin/branches/${branch.id}`}
+                  className="text-primary text-sm font-medium underline"
+                >
+                  Open branch
+                </Link>
+              ) : (
+                <p className="text-muted-foreground text-sm">
+                  Workspace unavailable while suspended
+                </p>
+              )}
+            </section>
+          ))}
+        </div>
+        {branches.length === 0 && (
+          <p className="text-muted-foreground mt-4">No branches have been created yet.</p>
+        )}
       </main>
     </PlatformShell>
   );

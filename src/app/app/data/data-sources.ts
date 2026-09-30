@@ -1,3 +1,5 @@
+import { db } from "@/lib/db";
+import { requireRole } from "@/lib/guards";
 import type { Prisma } from "@/generated/prisma/client";
 import { tenantDb } from "@/lib/tenant-db";
 
@@ -142,9 +144,7 @@ export const DATASET_META: Record<DatasetKey, DatasetMeta> = {
 };
 
 export function parseDataset(value: string | undefined): DatasetKey {
-  return (DATASETS as readonly string[]).includes(value ?? "")
-    ? (value as DatasetKey)
-    : "members";
+  return (DATASETS as readonly string[]).includes(value ?? "") ? (value as DatasetKey) : "members";
 }
 
 /** A row is a flat map of column key to primitive - ready for table or CSV. */
@@ -190,7 +190,16 @@ function dateWindow(from?: string, to?: string) {
 }
 
 export async function getDataset(query: Query): Promise<DatasetResult> {
-  const { db, tenantId } = await tenantDb();
+  const { tenantId } = await tenantDb();
+  return queryDataset(query, tenantId);
+}
+
+export async function getAdminDataset(query: Query, branch?: string) {
+  await requireRole("ADMIN");
+  return queryDataset(query, branch);
+}
+
+async function queryDataset(query: Query, tenantId?: string): Promise<DatasetResult> {
   const { dataset, search, from, to, page, all } = query;
 
   const q = search.trim();
@@ -227,6 +236,7 @@ export async function getDataset(query: Query): Promise<DatasetResult> {
         skip,
         take,
         select: {
+          tenant: { select: { id: true, name: true } },
           name: true,
           phone: true,
           email: true,
@@ -245,6 +255,8 @@ export async function getDataset(query: Query): Promise<DatasetResult> {
 
     return paged(
       rows.map((r) => ({
+        branch: r.tenant.name,
+        branchId: r.tenant.id,
         name: r.name,
         phone: r.phone,
         email: r.email,
@@ -281,6 +293,7 @@ export async function getDataset(query: Query): Promise<DatasetResult> {
         skip,
         take,
         select: {
+          tenant: { select: { id: true, name: true } },
           amount: true,
           recordedAt: true,
           paymentMethod: { select: { name: true } },
@@ -291,6 +304,8 @@ export async function getDataset(query: Query): Promise<DatasetResult> {
 
     return paged(
       rows.map((r) => ({
+        branch: r.tenant.name,
+        branchId: r.tenant.id,
         memberName: r.membership.member.name,
         barcode: r.membership.member.barcode,
         amount: money(r.amount),
@@ -318,6 +333,7 @@ export async function getDataset(query: Query): Promise<DatasetResult> {
         skip,
         take,
         select: {
+          tenant: { select: { id: true, name: true } },
           number: true,
           subtotal: true,
           discount: true,
@@ -332,6 +348,8 @@ export async function getDataset(query: Query): Promise<DatasetResult> {
 
     return paged(
       rows.map((r) => ({
+        branch: r.tenant.name,
+        branchId: r.tenant.id,
         number: r.number,
         memberName: r.member?.name ?? null,
         itemCount: r._count.lines,
@@ -361,6 +379,7 @@ export async function getDataset(query: Query): Promise<DatasetResult> {
         skip,
         take,
         select: {
+          tenant: { select: { id: true, name: true } },
           serial: true,
           name: true,
           category: true,
@@ -374,6 +393,8 @@ export async function getDataset(query: Query): Promise<DatasetResult> {
 
     return paged(
       rows.map((r) => ({
+        branch: r.tenant.name,
+        branchId: r.tenant.id,
         serial: String(r.serial).padStart(3, "0"),
         name: r.name,
         category: r.category,
@@ -403,6 +424,7 @@ export async function getDataset(query: Query): Promise<DatasetResult> {
         skip,
         take,
         select: {
+          tenant: { select: { id: true, name: true } },
           quantityDelta: true,
           type: true,
           reason: true,
@@ -414,6 +436,8 @@ export async function getDataset(query: Query): Promise<DatasetResult> {
 
     return paged(
       rows.map((r) => ({
+        branch: r.tenant.name,
+        branchId: r.tenant.id,
         productName: r.product.name,
         quantityDelta: r.quantityDelta,
         type: r.type,
@@ -430,9 +454,7 @@ export async function getDataset(query: Query): Promise<DatasetResult> {
     const where: Prisma.ExpenseWhereInput = {
       tenantId,
       ...(window ? { spentAt: window } : {}),
-      ...(q
-        ? { OR: [{ description: contains(q) }, { category: { name: contains(q) } }] }
-        : {}),
+      ...(q ? { OR: [{ description: contains(q) }, { category: { name: contains(q) } }] } : {}),
     };
 
     const [total, rows] = await Promise.all([
@@ -443,6 +465,7 @@ export async function getDataset(query: Query): Promise<DatasetResult> {
         skip,
         take,
         select: {
+          tenant: { select: { id: true, name: true } },
           amount: true,
           description: true,
           spentAt: true,
@@ -454,6 +477,8 @@ export async function getDataset(query: Query): Promise<DatasetResult> {
 
     return paged(
       rows.map((r) => ({
+        branch: r.tenant.name,
+        branchId: r.tenant.id,
         category: r.category.name,
         description: r.description,
         amount: money(r.amount),
@@ -489,6 +514,7 @@ export async function getDataset(query: Query): Promise<DatasetResult> {
       skip,
       take,
       select: {
+        tenant: { select: { id: true, name: true } },
         amount: true,
         note: true,
         transferredAt: true,
@@ -500,6 +526,8 @@ export async function getDataset(query: Query): Promise<DatasetResult> {
 
   return paged(
     rows.map((r) => ({
+      branch: r.tenant.name,
+      branchId: r.tenant.id,
       fromMethod: r.fromMethod.name,
       toMethod: r.toMethod.name,
       amount: money(r.amount),

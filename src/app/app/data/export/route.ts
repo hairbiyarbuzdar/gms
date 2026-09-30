@@ -1,12 +1,6 @@
 import type { NextRequest } from "next/server";
 import { formatDate, formatMoneyPrecise } from "@/lib/format";
-import {
-  DATASET_META,
-  getDataset,
-  parseDataset,
-  type Column,
-  type DataRow,
-} from "../data-sources";
+import { DATASET_META, getDataset, parseDataset, type Column, type DataRow } from "../data-sources";
 
 /**
  * CSV export for the current view (FR-50).
@@ -45,9 +39,7 @@ export async function GET(request: NextRequest) {
   });
 
   const header = meta.columns.map((c) => csvCell(c.label)).join(",");
-  const body = rows.map((row) =>
-    meta.columns.map((c) => csvCell(render(row, c))).join(",")
-  );
+  const body = rows.map((row) => meta.columns.map((c) => csvCell(render(row, c))).join(","));
 
   // BOM so Excel opens UTF-8 correctly - without it "Rs" and names with
   // non-ASCII characters arrive mangled.

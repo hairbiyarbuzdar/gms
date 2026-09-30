@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/workspace-link";
 import { ChevronLeft, ChevronRight, Users } from "lucide-react";
 import { getTenantContext } from "@/lib/tenant-context";
 import { tenantDb } from "@/lib/tenant-db";

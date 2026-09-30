@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/workspace-link";
 import { tenantDb } from "@/lib/tenant-db";
 import { PageHeader } from "@/components/page-header";
 import { PosTerminal } from "./pos-terminal";

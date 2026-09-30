@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import Link from "next/link";
+import Link from "@/components/workspace-link";
 import { ArrowRight, History, Trash2 } from "lucide-react";
 import { formatDate, formatMoney } from "@/lib/format";
 import type { TransferRange, TransferRow } from "./data";

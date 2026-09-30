@@ -1,3 +1,5 @@
+import { db } from "@/lib/db";
+import { requireRole } from "@/lib/guards";
 import { tenantDb } from "@/lib/tenant-db";
 
 export type MethodBalance = {
@@ -9,6 +11,8 @@ export type MethodBalance = {
   currentBalance: number;
   /** How many money records reference it, transfers included. */
   usageCount: number;
+  branch: string;
+  branchId: string;
 };
 
 export type TransferRow = {
@@ -36,13 +40,27 @@ function num(value: { toString(): string } | null | undefined): number {
  * so this stays flat as the ledger grows.
  */
 export async function getMethodBalances(): Promise<MethodBalance[]> {
-  const { db, tenantId } = await tenantDb();
+  const { tenantId } = await tenantDb();
+  return queryMethodBalances(tenantId);
+}
 
+export async function getAdminMethodBalances(branch?: string) {
+  await requireRole("ADMIN");
+  return queryMethodBalances(branch);
+}
+
+async function queryMethodBalances(tenantId?: string): Promise<MethodBalance[]> {
   const [methods, renewals, sales, expenses, purchases, out, incoming] = await Promise.all([
     db.paymentMethod.findMany({
       where: { tenantId },
       orderBy: [{ isActive: "desc" }, { name: "asc" }],
-      select: { id: true, name: true, isActive: true, openingBalance: true },
+      select: {
+        tenant: { select: { id: true, name: true } },
+        id: true,
+        name: true,
+        isActive: true,
+        openingBalance: true,
+      },
     }),
     db.renewalPayment.groupBy({
       by: ["paymentMethodId"],
@@ -127,6 +145,8 @@ export async function getMethodBalances(): Promise<MethodBalance[]> {
       (inBy.get(method.id)?.count ?? 0);
 
     return {
+      branch: method.tenant.name,
+      branchId: method.tenant.id,
       id: method.id,
       name: method.name,
       isActive: method.isActive,

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/workspace-link";
 import { ChevronLeft, ChevronRight, Download, Table2 } from "lucide-react";
 import { getTenantContext } from "@/lib/tenant-context";
 import { formatDate, formatMoneyPrecise } from "@/lib/format";
@@ -72,18 +72,21 @@ export default async function DataViewerPage({
         title="Data Viewer"
         description="Browse, search, and export the raw records behind every module. Read-only."
         action={
-          <a
+          <Link
             href={`/app/data/export?${query({})}`}
-            className="flex items-center gap-2 rounded border border-primary bg-card px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+            className="border-primary bg-card text-primary hover:bg-primary hover:text-primary-foreground flex items-center gap-2 rounded border px-4 py-2.5 text-sm font-medium transition-colors"
           >
             <Download className="size-4" aria-hidden="true" />
             Export CSV
-          </a>
+          </Link>
         }
       />
 
       {/* Dataset tabs */}
-      <nav className="mt-4 flex gap-1 overflow-x-auto border-b border-border pb-px" aria-label="Datasets">
+      <nav
+        className="border-border mt-4 flex gap-1 overflow-x-auto border-b pb-px"
+        aria-label="Datasets"
+      >
         {DATASETS.map((key) => {
           const active = key === dataset;
           return (
@@ -91,10 +94,10 @@ export default async function DataViewerPage({
               key={key}
               href={`/app/data?dataset=${key}`}
               aria-current={active ? "page" : undefined}
-              className={`shrink-0 whitespace-nowrap border-b-[3px] px-3 pb-3 pt-1 text-sm transition-colors ${
+              className={`shrink-0 border-b-[3px] px-3 pt-1 pb-3 text-sm whitespace-nowrap transition-colors ${
                 active
-                  ? "border-primary font-medium text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  ? "border-primary text-primary font-medium"
+                  : "text-muted-foreground hover:text-foreground border-transparent"
               }`}
             >
               {DATASET_META[key].label}
@@ -103,12 +106,12 @@ export default async function DataViewerPage({
         })}
       </nav>
 
-      <p className="mt-4 text-[13px] text-muted-foreground">{meta.description}</p>
+      <p className="text-muted-foreground mt-4 text-[13px]">{meta.description}</p>
 
       {/* Toolbar */}
-      <div className="mt-4 flex flex-wrap items-end justify-between gap-4 rounded-lg border border-border bg-card p-4">
-        <DataFilters dataset={dataset} dateLabel={meta.dateLabel} />
-        <p className="text-[13px] text-muted-foreground">
+      <div className="border-border bg-card mt-4 flex flex-wrap items-end justify-between gap-4 rounded-lg border p-4">
+        <DataFilters key={dataset} dataset={dataset} dateLabel={meta.dateLabel} />
+        <p className="text-muted-foreground text-[13px]">
           {result.total === 0 ? "No rows" : `Showing ${from}–${to} of ${result.total}`}
         </p>
       </div>
@@ -116,24 +119,24 @@ export default async function DataViewerPage({
       {/* Table */}
       <div className="mt-4">
         {result.rows.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card px-6 py-16 text-center">
-            <Table2 className="size-8 text-muted-foreground/50" aria-hidden="true" />
+          <div className="border-border bg-card flex flex-col items-center justify-center rounded-lg border px-6 py-16 text-center">
+            <Table2 className="text-muted-foreground/50 size-8" aria-hidden="true" />
             <p className="mt-3 text-sm font-medium">Nothing to show</p>
-            <p className="mt-1 text-[13px] leading-[18px] text-muted-foreground">
+            <p className="text-muted-foreground mt-1 text-[13px] leading-[18px]">
               {search || sp.from || sp.to
                 ? "No rows match these filters."
                 : "This table has no records yet."}
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-border bg-card">
+          <div className="border-border bg-card overflow-x-auto rounded-lg border">
             <table className="w-full border-collapse text-left">
               <thead>
-                <tr className="border-b border-border bg-primary-tint">
+                <tr className="border-border bg-primary-tint border-b">
                   {meta.columns.map((column) => (
                     <th
                       key={column.key}
-                      className={`label-caps whitespace-nowrap px-4 py-3 text-muted-foreground ${
+                      className={`label-caps text-muted-foreground px-4 py-3 whitespace-nowrap ${
                         column.numeric ? "text-right" : ""
                       }`}
                     >
@@ -144,7 +147,7 @@ export default async function DataViewerPage({
               </thead>
               <tbody>
                 {result.rows.map((row, index) => (
-                  <tr key={index} className="border-b border-border last:border-0">
+                  <tr key={index} className="border-border border-b last:border-0">
                     {meta.columns.map((column) => (
                       <td
                         key={column.key}
@@ -173,7 +176,7 @@ export default async function DataViewerPage({
           >
             <ChevronLeft className="size-4" aria-hidden="true" />
           </PageLink>
-          <span className="data-mono text-[13px] text-muted-foreground">
+          <span className="data-mono text-muted-foreground text-[13px]">
             {result.page} / {result.pageCount}
           </span>
           <PageLink
@@ -212,7 +215,11 @@ function PageLink({
   }
 
   return (
-    <Link href={href} aria-label={label} className={`${base} hover:border-primary hover:text-primary`}>
+    <Link
+      href={href}
+      aria-label={label}
+      className={`${base} hover:border-primary hover:text-primary`}
+    >
       {children}
     </Link>
   );

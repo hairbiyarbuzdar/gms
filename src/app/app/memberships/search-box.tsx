@@ -1,5 +1,6 @@
 "use client";
 
+import { useWorkspaceBase } from "@/components/workspace-link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Search } from "lucide-react";
@@ -11,6 +12,7 @@ import { Search } from "lucide-react";
  */
 export function SearchBox({ tab }: { tab: string }) {
   const router = useRouter();
+  const base = useWorkspaceBase();
   const params = useSearchParams();
   const [value, setValue] = useState(params.get("q") ?? "");
   const [, startTransition] = useTransition();
@@ -25,11 +27,11 @@ export function SearchBox({ tab }: { tab: string }) {
       else next.delete("q");
       next.delete("page");
       next.set("tab", tab);
-      startTransition(() => router.replace(`/app/memberships?${next}`, { scroll: false }));
+      startTransition(() => router.replace(`${base}/memberships?${next}`, { scroll: false }));
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [value, params, router, tab]);
+  }, [value, params, router, tab, base]);
 
   return (
     <div className="relative w-full sm:w-80">
