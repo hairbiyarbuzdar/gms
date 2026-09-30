@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { activityTransaction } from "@/lib/activity-write";
 import { tenantDb } from "@/lib/tenant-db";
 import { recordExpense } from "@/lib/record-expense";
 
@@ -42,7 +43,7 @@ export async function createExpense(
   _prev: ExpenseState,
   formData: FormData
 ): Promise<ExpenseState> {
-  const { db, tenantId } = await tenantDb();
+  const { db, tenantId, userId } = await tenantDb();
 
   const parsed = expenseSchema.safeParse({
     categoryId: formData.get("categoryId"),
@@ -65,16 +66,21 @@ export async function createExpense(
 
   const { categoryId, amount, paymentMethodId, description, spentAt } = parsed.data;
 
-  const result = await recordExpense(db, {
-    tenantId,
-    categoryId,
-    amount,
-    paymentMethodId,
-    description: description || null,
-    spentAt: spentAt ? new Date(spentAt) : new Date(),
-  });
+  const result = await recordExpense(
+    db,
+    {
+      tenantId,
+      categoryId,
+      amount,
+      paymentMethodId,
+      description: description || null,
+      spentAt: spentAt ? new Date(spentAt) : new Date(),
+    },
+    userId
+  );
   if (!("ok" in result)) return result;
   revalidateAll();
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }
 
@@ -83,7 +89,7 @@ export async function deleteExpense(
   _prev: ExpenseState,
   formData: FormData
 ): Promise<ExpenseState> {
-  const { db, tenantId } = await tenantDb();
+  const { db, tenantId, userId } = await tenantDb();
 
   const id = String(formData.get("id") ?? "");
   const existing = await db.expense.findFirst({
@@ -92,9 +98,14 @@ export async function deleteExpense(
   });
   if (!existing) return { error: "Expense not found." };
 
-  await db.expense.delete({ where: { id } });
+  await activityTransaction(
+    db,
+    { tenantId, actorId: userId, action: "EXPENSE_DELETE", target: id },
+    (tx) => tx.expense.delete({ where: { id } })
+  );
 
   revalidateAll();
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }
 
@@ -103,7 +114,7 @@ export async function createCategory(
   _prev: ExpenseState,
   formData: FormData
 ): Promise<ExpenseState> {
-  const { db, tenantId } = await tenantDb();
+  const { db, tenantId, userId } = await tenantDb();
 
   const parsed = categorySchema.safeParse({ name: formData.get("name") });
   if (!parsed.success) {
@@ -118,8 +129,13 @@ export async function createCategory(
   });
   if (clash) return { fieldErrors: { name: "That category already exists." } };
 
-  await db.expenseCategory.create({ data: { tenantId, name, isActive: true } });
+  await activityTransaction(
+    db,
+    { tenantId, actorId: userId, action: "EXPENSE_CATEGORY_CREATE" },
+    (tx) => tx.expenseCategory.create({ data: { tenantId, name, isActive: true } })
+  );
 
   revalidatePath("/app/expenses");
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }

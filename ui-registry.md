@@ -72,3 +72,19 @@ Last updated: 2026-09-30
 | Loading | role=status; disable repeated actions while loading or saving |
 
 Pattern notes: Reuse the 80 mm invoice preview for history printing. Keep saved unit prices on existing invoice lines. Editing reconciles inventory deltas and derived payment balances; deletion requires an explicit confirmation and restores stock. Keep controls outside the print document. Search remains intact after editing or deleting.
+
+## Activity log
+
+Files: src/app/admin/activity-log/page.tsx, src/lib/activity-log.ts
+Last updated: 2026-09-30
+
+| Property | Classes / pattern |
+| --- | --- |
+| Table and filter surface | rounded border border-border bg-card |
+| Table headings | bg-primary-tint, label-caps, text-muted-foreground, px-4 py-3 |
+| Cell text | text-sm; data-mono for timestamps and record references |
+| Search controls | border-input bg-background, rounded, focus:border-primary focus:ring-primary |
+| Pagination | bordered links, visible focus outline; inactive directions use aria-disabled |
+| Empty state | existing History icon, centered text, bordered card |
+
+Pattern notes: Read-only Admin/Supervisor log across gym locations; require ADMIN, not SUPERADMIN. Sort newest first, 25 entries per page. Search, action, and gym filters persist in URL. Show Pakistan time and human-readable actions. New memberships, renewals, invoice creation/edits/deletions, expenses, inventory, suppliers, purchases, payment methods, transfers, packages, and extras write activity atomically. Summarize only intentional metadata fields rather than rendering arbitrary stored JSON. Older unlogged actions are not fabricated.

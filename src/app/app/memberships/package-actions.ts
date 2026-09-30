@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { activityTransaction } from "@/lib/activity-write";
 import { tenantDb } from "@/lib/tenant-db";
 import { createPackageSchema, updatePackageSchema } from "@/lib/validators/package";
 
@@ -24,7 +25,7 @@ export async function createPackage(
   _prev: PackageState,
   formData: FormData
 ): Promise<PackageState> {
-  const { db, tenantId } = await tenantDb();
+  const { db, tenantId, userId } = await tenantDb();
 
   const parsed = createPackageSchema.safeParse({
     name: formData.get("name"),
@@ -47,18 +48,21 @@ export async function createPackage(
     return { fieldErrors: { name: "A package with that name already exists." } };
   }
 
-  await db.package.create({
-    data: {
-      tenantId,
-      name,
-      price,
-      whatsIncluded: whatsIncluded || null,
-      durationMonths,
-      isActive: true,
-    },
-  });
+  await activityTransaction(db, { tenantId, actorId: userId, action: "PACKAGE_CREATE" }, (tx) =>
+    tx.package.create({
+      data: {
+        tenantId,
+        name,
+        price,
+        whatsIncluded: whatsIncluded || null,
+        durationMonths,
+        isActive: true,
+      },
+    })
+  );
 
   revalidatePath("/app/memberships");
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }
 
@@ -67,7 +71,7 @@ export async function updatePackage(
   _prev: PackageState,
   formData: FormData
 ): Promise<PackageState> {
-  const { db, tenantId } = await tenantDb();
+  const { db, tenantId, userId } = await tenantDb();
 
   const parsed = updatePackageSchema.safeParse({
     id: formData.get("id"),
@@ -97,12 +101,18 @@ export async function updatePackage(
     return { fieldErrors: { name: "A package with that name already exists." } };
   }
 
-  await db.package.update({
-    where: { id },
-    data: { name, price, whatsIncluded: whatsIncluded || null },
-  });
+  await activityTransaction(
+    db,
+    { tenantId, actorId: userId, action: "PACKAGE_EDIT", target: id },
+    (tx) =>
+      tx.package.update({
+        where: { id },
+        data: { name, price, whatsIncluded: whatsIncluded || null },
+      })
+  );
 
   revalidatePath("/app/memberships");
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }
 
@@ -118,7 +128,7 @@ export async function togglePackage(
   _prev: PackageState,
   formData: FormData
 ): Promise<PackageState> {
-  const { db, tenantId } = await tenantDb();
+  const { db, tenantId, userId } = await tenantDb();
 
   const id = String(formData.get("id") ?? "");
   const existing = await db.package.findFirst({
@@ -128,11 +138,17 @@ export async function togglePackage(
 
   if (!existing) return { error: "Package not found." };
 
-  await db.package.update({
-    where: { id },
-    data: { isActive: !existing.isActive },
-  });
+  await activityTransaction(
+    db,
+    { tenantId, actorId: userId, action: "PACKAGE_STATUS", target: id },
+    (tx) =>
+      tx.package.update({
+        where: { id },
+        data: { isActive: !existing.isActive },
+      })
+  );
 
   revalidatePath("/app/memberships");
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }

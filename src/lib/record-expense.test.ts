@@ -18,6 +18,7 @@ function ledger(opening: number, conflicts = 0) {
   let attempts = 0;
   const aggregate = async () => ({ _sum: { amount: 0, total: 0 } });
   const tx = {
+    auditLog: { create: async () => ({ id: "log" }) },
     expenseCategory: { findFirst: async () => ({ id: "category" }) },
     paymentMethod: { findFirst: async () => ({ id: "cash", openingBalance: opening }) },
     renewalPayment: { aggregate },
@@ -28,6 +29,7 @@ function ledger(opening: number, conflicts = 0) {
       aggregate: async () => ({ _sum: { amount: spent } }),
       create: async ({ data }: { data: typeof input }) => {
         spent += data.amount;
+        return { id: "expense1", ...data };
       },
     },
   };
@@ -53,26 +55,26 @@ function ledger(opening: number, conflicts = 0) {
 
 test("an expense deducts from the method's current balance", async () => {
   const { db } = ledger(100);
-  assert.deepEqual(await recordExpense(db, input), { ok: true });
+  assert.deepEqual(await recordExpense(db, input, "user1"), { ok: true });
   assert.equal(await getMethodBalance(db, "tenant", "cash"), 60);
 });
 
 test("an expense exceeding funds returns an error and leaves the balance unchanged", async () => {
   const { db } = ledger(30);
-  const result = await recordExpense(db, input);
+  const result = await recordExpense(db, input, "user1");
   assert.ok("fieldErrors" in result && result.fieldErrors.amount.includes("30.00"));
   assert.equal(await getMethodBalance(db, "tenant", "cash"), 30);
 });
 
 test("the exact available amount may be spent", async () => {
   const { db } = ledger(40);
-  assert.deepEqual(await recordExpense(db, input), { ok: true });
+  assert.deepEqual(await recordExpense(db, input, "user1"), { ok: true });
   assert.equal(await getMethodBalance(db, "tenant", "cash"), 0);
 });
 
 test("conflicting expenses recheck funds instead of overdrawing", async () => {
   const { db, attempts } = ledger(100, 1);
-  const result = await recordExpense(db, input);
+  const result = await recordExpense(db, input, "user1");
   assert.ok("fieldErrors" in result);
   assert.equal(attempts(), 2);
   assert.equal(await getMethodBalance(db, "tenant", "cash"), 30);

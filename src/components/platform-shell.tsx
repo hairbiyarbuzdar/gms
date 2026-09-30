@@ -22,20 +22,25 @@ export function PlatformShell({
 }) {
   return (
     <div className="flex min-h-svh flex-col">
-      <header className="sticky top-0 z-40 border-b border-border bg-card">
+      <header className="border-border bg-card sticky top-0 z-40 border-b">
         <div className="mx-auto flex h-20 w-full max-w-[1440px] items-center gap-6 px-4 md:px-8">
-          <Link
-            href={home}
-            aria-label="Home"
-            className="flex shrink-0 items-center text-primary"
-          >
+          <Link href={home} aria-label="Home" className="text-primary flex shrink-0 items-center">
             <Dumbbell className="size-9" aria-hidden="true" />
           </Link>
 
+          {home === "/admin" && (
+            <Link
+              href="/admin/activity-log"
+              className="text-primary focus-visible:outline-primary text-sm font-medium hover:underline focus-visible:outline-2"
+            >
+              Activity Log
+            </Link>
+          )}
+
           <div className="ml-auto flex items-center gap-3">
             <div className="hidden text-right sm:block">
-              <p className="text-[13px] font-medium leading-tight">{role}</p>
-              <p className="max-w-[200px] truncate text-[12px] leading-tight text-muted-foreground">
+              <p className="text-[13px] leading-tight font-medium">{role}</p>
+              <p className="text-muted-foreground max-w-[200px] truncate text-[12px] leading-tight">
                 {userEmail}
               </p>
             </div>

@@ -32,6 +32,8 @@ function refreshInvoices() {
     "/app/payment-methods",
     "/app/reports",
     "/app/data",
+    "/app/activity-log",
+    "/admin/activity-log",
     "/app",
   ])
     revalidatePath(path);

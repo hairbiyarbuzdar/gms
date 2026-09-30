@@ -1,12 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { activityTransaction } from "@/lib/activity-write";
 import { tenantDb } from "@/lib/tenant-db";
-import {
-  adjustStockSchema,
-  productSchema,
-  updateProductSchema,
-} from "@/lib/validators/product";
+import { adjustStockSchema, productSchema, updateProductSchema } from "@/lib/validators/product";
 import { deleteProductPhoto, saveProductPhoto } from "@/lib/product-photo";
 
 export type ProductState = {
@@ -33,7 +30,7 @@ export async function createProduct(
   _prev: ProductState,
   formData: FormData
 ): Promise<ProductState> {
-  const { db, tenantId } = await tenantDb();
+  const { db, tenantId, userId } = await tenantDb();
 
   const parsed = productSchema.safeParse({
     name: formData.get("name"),
@@ -47,8 +44,7 @@ export async function createProduct(
 
   if (!parsed.success) return { fieldErrors: fields(parsed.error) };
 
-  const { name, category, photo, costPrice, salePrice, quantity, reorderLevel } =
-    parsed.data;
+  const { name, category, photo, costPrice, salePrice, quantity, reorderLevel } = parsed.data;
 
   // Write the photo before opening the transaction - a disk write should not
   // hold one open.
@@ -65,46 +61,53 @@ export async function createProduct(
     }
   }
 
-  await db.$transaction(async (tx) => {
-    // Next serial for this tenant, starting at 1. Derived inside the
-    // transaction so two concurrent creates cannot read the same value; the
-    // unique index on (tenantId, serial) rejects a collision if they do.
-    const last = await tx.product.findFirst({
-      where: { tenantId },
-      orderBy: { serial: "desc" },
-      select: { serial: true },
-    });
+  await activityTransaction(
+    db,
+    { tenantId, actorId: userId, action: "PRODUCT_CREATE", meta: { name, quantity } },
+    async (tx) => {
+      // Next serial for this tenant, starting at 1. Derived inside the
+      // transaction so two concurrent creates cannot read the same value; the
+      // unique index on (tenantId, serial) rejects a collision if they do.
+      const last = await tx.product.findFirst({
+        where: { tenantId },
+        orderBy: { serial: "desc" },
+        select: { serial: true },
+      });
 
-    const product = await tx.product.create({
-      data: {
-        tenantId,
-        serial: (last?.serial ?? 0) + 1,
-        name,
-        category: category || null,
-        photoUrl,
-        costPrice,
-        salePrice,
-        quantity,
-        reorderLevel,
-      },
-    });
-
-    // Stock never changes without a movement behind it (FR-26).
-    if (quantity > 0) {
-      await tx.stockMovement.create({
+      const product = await tx.product.create({
         data: {
           tenantId,
-          productId: product.id,
-          quantityDelta: quantity,
-          type: "ADJUSTMENT",
-          reason: "Opening stock",
+          serial: (last?.serial ?? 0) + 1,
+          name,
+          category: category || null,
+          photoUrl,
+          costPrice,
+          salePrice,
+          quantity,
+          reorderLevel,
         },
       });
+
+      // Stock never changes without a movement behind it (FR-26).
+      if (quantity > 0) {
+        await tx.stockMovement.create({
+          data: {
+            tenantId,
+            productId: product.id,
+            quantityDelta: quantity,
+            type: "ADJUSTMENT",
+            reason: "Opening stock",
+          },
+        });
+      }
+
+      return product;
     }
-  });
+  );
 
   revalidatePath("/app/inventory");
   revalidatePath("/app/invoices");
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }
 
@@ -122,7 +125,7 @@ export async function updateProduct(
   _prev: ProductState,
   formData: FormData
 ): Promise<ProductState> {
-  const { db, tenantId } = await tenantDb();
+  const { db, tenantId, userId } = await tenantDb();
 
   const parsed = updateProductSchema.safeParse({
     id: formData.get("id"),
@@ -161,17 +164,22 @@ export async function updateProduct(
     }
   }
 
-  await db.product.update({
-    where: { id },
-    data: {
-      name,
-      category: category || null,
-      costPrice,
-      salePrice,
-      reorderLevel,
-      ...photoUpdate,
-    },
-  });
+  await activityTransaction(
+    db,
+    { tenantId, actorId: userId, action: "PRODUCT_EDIT", target: id },
+    (tx) =>
+      tx.product.update({
+        where: { id },
+        data: {
+          name,
+          category: category || null,
+          costPrice,
+          salePrice,
+          reorderLevel,
+          ...photoUpdate,
+        },
+      })
+  );
 
   if ((photo === "__remove__" || photo?.startsWith("data:image/")) && oldPhoto) {
     await deleteProductPhoto(oldPhoto);
@@ -179,15 +187,13 @@ export async function updateProduct(
 
   revalidatePath("/app/inventory");
   revalidatePath("/app/invoices");
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }
 
 /** Records a manual stock correction with a reason (FR-27). */
-export async function adjustStock(
-  _prev: ProductState,
-  formData: FormData
-): Promise<ProductState> {
-  const { db, tenantId } = await tenantDb();
+export async function adjustStock(_prev: ProductState, formData: FormData): Promise<ProductState> {
+  const { db, tenantId, userId } = await tenantDb();
 
   const parsed = adjustStockSchema.safeParse({
     id: formData.get("id"),
@@ -214,20 +220,25 @@ export async function adjustStock(
     return { fieldErrors: { delta: `Only ${product.quantity} in stock.` } };
   }
 
-  await db.$transaction(async (tx) => {
-    await tx.product.update({
-      where: { id },
-      data: { quantity: { increment: delta } },
-    });
+  await activityTransaction(
+    db,
+    { tenantId, actorId: userId, action: "STOCK_ADJUST", target: id, meta: { delta } },
+    async (tx) => {
+      await tx.product.update({
+        where: { id },
+        data: { quantity: { increment: delta } },
+      });
 
-    await tx.stockMovement.create({
-      data: { tenantId, productId: id, quantityDelta: delta, type: "ADJUSTMENT", reason },
-    });
-  });
+      await tx.stockMovement.create({
+        data: { tenantId, productId: id, quantityDelta: delta, type: "ADJUSTMENT", reason },
+      });
+    }
+  );
 
   revalidatePath("/app/inventory");
   revalidatePath("/app/invoices");
   revalidatePath("/app");
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }
 
@@ -236,7 +247,7 @@ export async function toggleProduct(
   _prev: ProductState,
   formData: FormData
 ): Promise<ProductState> {
-  const { db, tenantId } = await tenantDb();
+  const { db, tenantId, userId } = await tenantDb();
 
   const id = String(formData.get("id") ?? "");
   const existing = await db.product.findFirst({
@@ -245,9 +256,14 @@ export async function toggleProduct(
   });
   if (!existing) return { error: "Product not found." };
 
-  await db.product.update({ where: { id }, data: { isActive: !existing.isActive } });
+  await activityTransaction(
+    db,
+    { tenantId, actorId: userId, action: "PRODUCT_STATUS", target: id },
+    (tx) => tx.product.update({ where: { id }, data: { isActive: !existing.isActive } })
+  );
 
   revalidatePath("/app/inventory");
   revalidatePath("/app/invoices");
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { activityTransaction } from "@/lib/activity-write";
 import { tenantDb } from "@/lib/tenant-db";
 
 const extraSchema = z.object({
@@ -23,11 +24,8 @@ function fields(error: { flatten(): { fieldErrors: Record<string, string[] | und
   return { name: f.name?.[0] ?? "", fee: f.fee?.[0] ?? "" };
 }
 
-export async function createExtra(
-  _prev: ExtraState,
-  formData: FormData
-): Promise<ExtraState> {
-  const { db, tenantId } = await tenantDb();
+export async function createExtra(_prev: ExtraState, formData: FormData): Promise<ExtraState> {
+  const { db, tenantId, userId } = await tenantDb();
 
   const parsed = extraSchema.safeParse({
     name: formData.get("name"),
@@ -43,9 +41,12 @@ export async function createExtra(
   });
   if (clash) return { fieldErrors: { name: "An extra with that name already exists." } };
 
-  await db.extra.create({ data: { tenantId, name, fee, isActive: true } });
+  await activityTransaction(db, { tenantId, actorId: userId, action: "EXTRA_CREATE" }, (tx) =>
+    tx.extra.create({ data: { tenantId, name, fee, isActive: true } })
+  );
 
   revalidatePath("/app/memberships");
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }
 
@@ -57,11 +58,8 @@ export async function createExtra(
  * snapshots it, so a price rise never silently rewrites what an existing
  * member is charged.
  */
-export async function updateExtra(
-  _prev: ExtraState,
-  formData: FormData
-): Promise<ExtraState> {
-  const { db, tenantId } = await tenantDb();
+export async function updateExtra(_prev: ExtraState, formData: FormData): Promise<ExtraState> {
+  const { db, tenantId, userId } = await tenantDb();
 
   const id = String(formData.get("id") ?? "");
   const parsed = extraSchema.safeParse({
@@ -84,9 +82,14 @@ export async function updateExtra(
   });
   if (clash) return { fieldErrors: { name: "An extra with that name already exists." } };
 
-  await db.extra.update({ where: { id }, data: { name, fee } });
+  await activityTransaction(
+    db,
+    { tenantId, actorId: userId, action: "EXTRA_EDIT", target: id },
+    (tx) => tx.extra.update({ where: { id }, data: { name, fee } })
+  );
 
   revalidatePath("/app/memberships");
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }
 
@@ -96,11 +99,8 @@ export async function updateExtra(
  * Never deleted: memberships reference it, and removing one would break what a
  * member is recorded as paying for.
  */
-export async function toggleExtra(
-  _prev: ExtraState,
-  formData: FormData
-): Promise<ExtraState> {
-  const { db, tenantId } = await tenantDb();
+export async function toggleExtra(_prev: ExtraState, formData: FormData): Promise<ExtraState> {
+  const { db, tenantId, userId } = await tenantDb();
 
   const id = String(formData.get("id") ?? "");
   const existing = await db.extra.findFirst({
@@ -109,9 +109,14 @@ export async function toggleExtra(
   });
   if (!existing) return { error: "Extra not found." };
 
-  await db.extra.update({ where: { id }, data: { isActive: !existing.isActive } });
+  await activityTransaction(
+    db,
+    { tenantId, actorId: userId, action: "EXTRA_STATUS", target: id },
+    (tx) => tx.extra.update({ where: { id }, data: { isActive: !existing.isActive } })
+  );
 
   revalidatePath("/app/memberships");
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }
 
@@ -126,7 +131,7 @@ export async function setMembershipExtras(
   _prev: ExtraState,
   formData: FormData
 ): Promise<ExtraState> {
-  const { db, tenantId } = await tenantDb();
+  const { db, tenantId, userId } = await tenantDb();
 
   const membershipId = String(formData.get("membershipId") ?? "");
   const chosenIds = formData.getAll("extraIds").map(String).filter(Boolean);
@@ -145,22 +150,27 @@ export async function setMembershipExtras(
       })
     : [];
 
-  await db.$transaction(async (tx) => {
-    await tx.membershipExtra.deleteMany({ where: { membershipId, tenantId } });
+  await activityTransaction(
+    db,
+    { tenantId, actorId: userId, action: "MEMBERSHIP_EXTRAS", target: membershipId },
+    async (tx) => {
+      await tx.membershipExtra.deleteMany({ where: { membershipId, tenantId } });
 
-    if (extras.length) {
-      await tx.membershipExtra.createMany({
-        data: extras.map((e) => ({
-          tenantId,
-          membershipId,
-          extraId: e.id,
-          fee: e.fee,
-        })),
-      });
+      if (extras.length) {
+        await tx.membershipExtra.createMany({
+          data: extras.map((e) => ({
+            tenantId,
+            membershipId,
+            extraId: e.id,
+            fee: e.fee,
+          })),
+        });
+      }
     }
-  });
+  );
 
   revalidatePath("/app/memberships");
   revalidatePath("/app");
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }

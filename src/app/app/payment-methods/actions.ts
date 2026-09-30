@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { activityTransaction } from "@/lib/activity-write";
 import { tenantDb } from "@/lib/tenant-db";
 import { getMethodBalance } from "@/lib/payment-method-balance";
 
@@ -40,7 +41,7 @@ export async function createPaymentMethod(
   _prev: MethodState,
   formData: FormData
 ): Promise<MethodState> {
-  const { db, tenantId } = await tenantDb();
+  const { db, tenantId, userId } = await tenantDb();
 
   const parsed = methodSchema.safeParse({
     name: formData.get("name"),
@@ -65,11 +66,17 @@ export async function createPaymentMethod(
   });
   if (clash) return { fieldErrors: { name: "That method already exists." } };
 
-  await db.paymentMethod.create({
-    data: { tenantId, name, openingBalance, isActive: true },
-  });
+  await activityTransaction(
+    db,
+    { tenantId, actorId: userId, action: "PAYMENT_METHOD_CREATE" },
+    (tx) =>
+      tx.paymentMethod.create({
+        data: { tenantId, name, openingBalance, isActive: true },
+      })
+  );
 
   revalidateAll();
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }
 
@@ -77,7 +84,7 @@ export async function updatePaymentMethod(
   _prev: MethodState,
   formData: FormData
 ): Promise<MethodState> {
-  const { db, tenantId } = await tenantDb();
+  const { db, tenantId, userId } = await tenantDb();
 
   const id = String(formData.get("id") ?? "");
   const parsed = methodSchema.safeParse({
@@ -109,9 +116,14 @@ export async function updatePaymentMethod(
   });
   if (clash) return { fieldErrors: { name: "That method already exists." } };
 
-  await db.paymentMethod.update({ where: { id }, data: { name, openingBalance } });
+  await activityTransaction(
+    db,
+    { tenantId, actorId: userId, action: "PAYMENT_METHOD_EDIT", target: id },
+    (tx) => tx.paymentMethod.update({ where: { id }, data: { name, openingBalance } })
+  );
 
   revalidateAll();
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }
 
@@ -126,7 +138,7 @@ export async function togglePaymentMethod(
   _prev: MethodState,
   formData: FormData
 ): Promise<MethodState> {
-  const { db, tenantId } = await tenantDb();
+  const { db, tenantId, userId } = await tenantDb();
 
   const id = String(formData.get("id") ?? "");
   const existing = await db.paymentMethod.findFirst({
@@ -135,12 +147,18 @@ export async function togglePaymentMethod(
   });
   if (!existing) return { error: "Payment method not found." };
 
-  await db.paymentMethod.update({
-    where: { id },
-    data: { isActive: !existing.isActive },
-  });
+  await activityTransaction(
+    db,
+    { tenantId, actorId: userId, action: "PAYMENT_METHOD_STATUS", target: id },
+    (tx) =>
+      tx.paymentMethod.update({
+        where: { id },
+        data: { isActive: !existing.isActive },
+      })
+  );
 
   revalidateAll();
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }
 
@@ -150,11 +168,8 @@ export async function togglePaymentMethod(
  * Not income and not an expense - the same money leaves one balance and lands
  * in another, so revenue and expense reporting are untouched.
  */
-export async function createTransfer(
-  _prev: MethodState,
-  formData: FormData
-): Promise<MethodState> {
-  const { db, tenantId } = await tenantDb();
+export async function createTransfer(_prev: MethodState, formData: FormData): Promise<MethodState> {
+  const { db, tenantId, userId } = await tenantDb();
 
   const parsed = transferSchema.safeParse({
     fromMethodId: formData.get("fromMethodId"),
@@ -198,11 +213,14 @@ export async function createTransfer(
     };
   }
 
-  await db.paymentTransfer.create({
-    data: { tenantId, fromMethodId, toMethodId, amount, note: note || null },
-  });
+  await activityTransaction(db, { tenantId, actorId: userId, action: "TRANSFER_CREATE" }, (tx) =>
+    tx.paymentTransfer.create({
+      data: { tenantId, fromMethodId, toMethodId, amount, note: note || null },
+    })
+  );
 
   revalidateAll();
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }
 
@@ -213,11 +231,8 @@ export async function createTransfer(
  * so deleting it simply reverses both balances - which is what correcting a
  * mistyped transfer should do.
  */
-export async function deleteTransfer(
-  _prev: MethodState,
-  formData: FormData
-): Promise<MethodState> {
-  const { db, tenantId } = await tenantDb();
+export async function deleteTransfer(_prev: MethodState, formData: FormData): Promise<MethodState> {
+  const { db, tenantId, userId } = await tenantDb();
 
   const id = String(formData.get("id") ?? "");
   const existing = await db.paymentTransfer.findFirst({
@@ -226,8 +241,13 @@ export async function deleteTransfer(
   });
   if (!existing) return { error: "Transfer not found." };
 
-  await db.paymentTransfer.delete({ where: { id } });
+  await activityTransaction(
+    db,
+    { tenantId, actorId: userId, action: "TRANSFER_DELETE", target: id },
+    (tx) => tx.paymentTransfer.delete({ where: { id } })
+  );
 
   revalidateAll();
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }

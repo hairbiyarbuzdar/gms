@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import { getMethodBalance } from "./payment-method-balance";
+import { writeActivity } from "./activity-write";
 
 type ExpenseInput = {
   tenantId: string;
@@ -13,7 +14,11 @@ type ExpenseInput = {
 type Result = { ok: true } | { fieldErrors: Record<string, string> } | { error: string };
 
 /** The expense itself is the debit in the payment method's ledger. */
-export async function recordExpense(db: PrismaClient, data: ExpenseInput): Promise<Result> {
+export async function recordExpense(
+  db: PrismaClient,
+  data: ExpenseInput,
+  actorId: string
+): Promise<Result> {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       return await db.$transaction(
@@ -42,7 +47,8 @@ export async function recordExpense(db: PrismaClient, data: ExpenseInput): Promi
             };
           }
 
-          await tx.expense.create({ data });
+          const expense = await tx.expense.create({ data });
+          await writeActivity(tx, { tenantId, actorId, action: "EXPENSE_CREATE" }, expense);
           return { ok: true };
         },
         { isolationLevel: "Serializable" }

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { activityTransaction } from "@/lib/activity-write";
 import { tenantDb } from "@/lib/tenant-db";
 import { getMethodBalance } from "@/lib/payment-method-balance";
 import {
@@ -51,7 +52,7 @@ export async function createSupplier(
   _prev: SupplierState,
   formData: FormData
 ): Promise<SupplierState> {
-  const { db, tenantId } = await tenantDb();
+  const { db, tenantId, userId } = await tenantDb();
 
   const parsed = supplierSchema.safeParse({
     name: formData.get("name"),
@@ -65,18 +66,21 @@ export async function createSupplier(
 
   const { name, phone, email, address, notes } = parsed.data;
 
-  await db.supplier.create({
-    data: {
-      tenantId,
-      name,
-      phone: phone || null,
-      email: email || null,
-      address: address || null,
-      notes: notes || null,
-    },
-  });
+  await activityTransaction(db, { tenantId, actorId: userId, action: "SUPPLIER_CREATE" }, (tx) =>
+    tx.supplier.create({
+      data: {
+        tenantId,
+        name,
+        phone: phone || null,
+        email: email || null,
+        address: address || null,
+        notes: notes || null,
+      },
+    })
+  );
 
   revalidatePath("/app/suppliers");
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }
 
@@ -84,7 +88,7 @@ export async function updateSupplier(
   _prev: SupplierState,
   formData: FormData
 ): Promise<SupplierState> {
-  const { db, tenantId } = await tenantDb();
+  const { db, tenantId, userId } = await tenantDb();
 
   const parsed = updateSupplierSchema.safeParse({
     id: formData.get("id"),
@@ -105,18 +109,24 @@ export async function updateSupplier(
   });
   if (!existing) return { error: "Supplier not found." };
 
-  await db.supplier.update({
-    where: { id },
-    data: {
-      name,
-      phone: phone || null,
-      email: email || null,
-      address: address || null,
-      notes: notes || null,
-    },
-  });
+  await activityTransaction(
+    db,
+    { tenantId, actorId: userId, action: "SUPPLIER_EDIT", target: id },
+    (tx) =>
+      tx.supplier.update({
+        where: { id },
+        data: {
+          name,
+          phone: phone || null,
+          email: email || null,
+          address: address || null,
+          notes: notes || null,
+        },
+      })
+  );
 
   revalidatePath("/app/suppliers");
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }
 
@@ -131,15 +141,14 @@ export async function updateSupplier(
  * amount of 0 records the invoice as unpaid, with no method.
  */
 export async function createPurchase(input: unknown): Promise<SupplierState> {
-  const { db, tenantId } = await tenantDb();
+  const { db, tenantId, userId } = await tenantDb();
 
   const parsed = createPurchaseSchema.safeParse(input);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid purchase." };
   }
 
-  const { supplierId, reference, invoiceDate, lines, paymentMethodId, amountPaid } =
-    parsed.data;
+  const { supplierId, reference, invoiceDate, lines, paymentMethodId, amountPaid } = parsed.data;
 
   const supplier = await db.supplier.findFirst({
     where: { id: supplierId, tenantId },
@@ -171,10 +180,7 @@ export async function createPurchase(input: unknown): Promise<SupplierState> {
     return { error: "One or more products are no longer available." };
   }
 
-  const total = [...byProduct.values()].reduce(
-    (sum, l) => sum + l.quantity * l.unitCost,
-    0
-  );
+  const total = [...byProduct.values()].reduce((sum, l) => sum + l.quantity * l.unitCost, 0);
   const paid = Math.min(amountPaid, total);
 
   if (amountPaid > 0 && !paymentMethodId) {
@@ -197,63 +203,70 @@ export async function createPurchase(input: unknown): Promise<SupplierState> {
     }
   }
 
-  await db.$transaction(async (tx) => {
-    const invoice = await tx.purchaseInvoice.create({
-      data: {
-        tenantId,
-        supplierId,
-        reference: reference || null,
-        total,
-        status: statusFor(total, paid),
-        invoiceDate: invoiceDate ? new Date(invoiceDate) : new Date(),
-        lines: {
-          create: [...byProduct.entries()].map(([productId, l]) => ({
+  await activityTransaction(
+    db,
+    { tenantId, actorId: userId, action: "PURCHASE_CREATE", meta: { total, amount: paid } },
+    async (tx) => {
+      const invoice = await tx.purchaseInvoice.create({
+        data: {
+          tenantId,
+          supplierId,
+          reference: reference || null,
+          total,
+          status: statusFor(total, paid),
+          invoiceDate: invoiceDate ? new Date(invoiceDate) : new Date(),
+          lines: {
+            create: [...byProduct.entries()].map(([productId, l]) => ({
+              tenantId,
+              productId,
+              quantity: l.quantity,
+              unitCost: l.unitCost,
+              unitSalePrice: l.unitSalePrice,
+            })),
+          },
+        },
+        select: { id: true },
+      });
+
+      // Stock never moves without a documented movement behind it (FR-26). The
+      // purchase also carries the product's cost and its new sale price.
+      for (const [productId, l] of byProduct.entries()) {
+        await tx.product.update({
+          where: { id: productId },
+          data: {
+            quantity: { increment: l.quantity },
+            costPrice: l.unitCost,
+            salePrice: l.unitSalePrice,
+          },
+        });
+        await tx.stockMovement.create({
+          data: {
             tenantId,
             productId,
-            quantity: l.quantity,
-            unitCost: l.unitCost,
-            unitSalePrice: l.unitSalePrice,
-          })),
-        },
-      },
-      select: { id: true },
-    });
+            quantityDelta: l.quantity,
+            type: "PURCHASE",
+            reference: `PurchaseInvoice:${invoice.id}`,
+          },
+        });
+      }
 
-    // Stock never moves without a documented movement behind it (FR-26). The
-    // purchase also carries the product's cost and its new sale price.
-    for (const [productId, l] of byProduct.entries()) {
-      await tx.product.update({
-        where: { id: productId },
-        data: {
-          quantity: { increment: l.quantity },
-          costPrice: l.unitCost,
-          salePrice: l.unitSalePrice,
-        },
-      });
-      await tx.stockMovement.create({
-        data: {
-          tenantId,
-          productId,
-          quantityDelta: l.quantity,
-          type: "PURCHASE",
-          reference: `PurchaseInvoice:${invoice.id}`,
-        },
-      });
-    }
+      if (paid > 0 && method) {
+        await tx.purchasePayment.create({
+          data: {
+            tenantId,
+            purchaseInvoiceId: invoice.id,
+            amount: paid,
+            paymentMethodId: method.id,
+          },
+        });
+      }
 
-    if (paid > 0 && method) {
-      await tx.purchasePayment.create({
-        data: {
-          tenantId,
-          purchaseInvoiceId: invoice.id,
-          amount: paid,
-          paymentMethodId: method.id,
-        },
-      });
+      return invoice;
     }
-  });
+  );
 
   revalidateAll();
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }
 
@@ -262,7 +275,7 @@ export async function addPurchasePayment(
   _prev: SupplierState,
   formData: FormData
 ): Promise<SupplierState> {
-  const { db, tenantId } = await tenantDb();
+  const { db, tenantId, userId } = await tenantDb();
 
   const parsed = addPurchasePaymentSchema.safeParse({
     purchaseInvoiceId: formData.get("purchaseInvoiceId"),
@@ -312,16 +325,27 @@ export async function addPurchasePayment(
     };
   }
 
-  await db.$transaction(async (tx) => {
-    await tx.purchasePayment.create({
-      data: { tenantId, purchaseInvoiceId, amount, paymentMethodId },
-    });
-    await tx.purchaseInvoice.update({
-      where: { id: purchaseInvoiceId },
-      data: { status: statusFor(total, alreadyPaid + amount) },
-    });
-  });
+  await activityTransaction(
+    db,
+    {
+      tenantId,
+      actorId: userId,
+      action: "PURCHASE_PAYMENT",
+      target: purchaseInvoiceId,
+      meta: { amount },
+    },
+    async (tx) => {
+      await tx.purchasePayment.create({
+        data: { tenantId, purchaseInvoiceId, amount, paymentMethodId },
+      });
+      await tx.purchaseInvoice.update({
+        where: { id: purchaseInvoiceId },
+        data: { status: statusFor(total, alreadyPaid + amount) },
+      });
+    }
+  );
 
   revalidateAll();
+  revalidatePath("/admin/activity-log");
   return { ok: true };
 }

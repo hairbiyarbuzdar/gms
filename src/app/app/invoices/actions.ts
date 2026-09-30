@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { activityTransaction } from "@/lib/activity-write";
 import { tenantDb } from "@/lib/tenant-db";
 import { createInvoiceSchema } from "@/lib/validators/invoice";
 import type { InvoiceReceipt } from "./invoice-receipt";
@@ -43,7 +44,7 @@ function formatNumber(sequence: number): string {
  * anyone sell at whatever figure they liked.
  */
 export async function createSale(input: unknown): Promise<SaleState> {
-  const { db, tenantId } = await tenantDb();
+  const { db, tenantId, userId } = await tenantDb();
 
   const parsed = createInvoiceSchema.safeParse(input);
   if (!parsed.success) {
@@ -108,82 +109,87 @@ export async function createSale(input: unknown): Promise<SaleState> {
 
   const total = subtotal - discount;
 
-  const saved = await db.$transaction(async (tx) => {
-    // Every number is read and compared numerically. A `orderBy: number desc`
-    // would sort as text and pick the wrong row - see highestSequence above.
-    const existing = await tx.retailInvoice.findMany({
-      where: { tenantId },
-      select: { number: true },
-    });
-    // Deleting the most recent invoice must not reuse its printed number.
-    const deleted = await tx.auditLog.findMany({
-      where: { tenantId, action: "RETAIL_INVOICE_DELETE" },
-      select: { meta: true },
-    });
-    const retiredNumbers = deleted.flatMap(({ meta }) =>
-      meta && typeof meta === "object" && !Array.isArray(meta) && typeof meta.number === "string"
-        ? [meta.number]
-        : []
-    );
-    const number = formatNumber(
-      highestSequence([...existing.map((row) => row.number), ...retiredNumbers]) + 1
-    );
-
-    const invoice = await tx.retailInvoice.create({
-      data: {
-        tenantId,
-        number,
-        memberId: member?.id ?? null,
-        subtotal,
-        discount,
-        total,
-        paymentMethodId,
-        lines: {
-          create: priced.map((line) => ({
-            tenantId,
-            productId: line.product.id,
-            unitPrice: line.unitPrice,
-            quantity: line.quantity,
-            lineTotal: line.lineTotal,
-          })),
-        },
-      },
-      select: {
-        id: true,
-        number: true,
-        soldAt: true,
-        subtotal: true,
-        discount: true,
-        total: true,
-        lines: { select: { productId: true, quantity: true, unitPrice: true, lineTotal: true } },
-      },
-    });
-
-    for (const line of priced) {
-      await tx.product.update({
-        where: { id: line.product.id },
-        data: { quantity: { decrement: line.quantity } },
+  const saved = await activityTransaction(
+    db,
+    { tenantId, actorId: userId, action: "RETAIL_INVOICE_CREATE" },
+    async (tx) => {
+      // Every number is read and compared numerically. A `orderBy: number desc`
+      // would sort as text and pick the wrong row - see highestSequence above.
+      const existing = await tx.retailInvoice.findMany({
+        where: { tenantId },
+        select: { number: true },
       });
+      // Deleting the most recent invoice must not reuse its printed number.
+      const deleted = await tx.auditLog.findMany({
+        where: { tenantId, action: "RETAIL_INVOICE_DELETE" },
+        select: { meta: true },
+      });
+      const retiredNumbers = deleted.flatMap(({ meta }) =>
+        meta && typeof meta === "object" && !Array.isArray(meta) && typeof meta.number === "string"
+          ? [meta.number]
+          : []
+      );
+      const number = formatNumber(
+        highestSequence([...existing.map((row) => row.number), ...retiredNumbers]) + 1
+      );
 
-      await tx.stockMovement.create({
+      const invoice = await tx.retailInvoice.create({
         data: {
           tenantId,
-          productId: line.product.id,
-          quantityDelta: -line.quantity,
-          type: "SALE",
-          reference: `RetailInvoice:${invoice.id}`,
+          number,
+          memberId: member?.id ?? null,
+          subtotal,
+          discount,
+          total,
+          paymentMethodId,
+          lines: {
+            create: priced.map((line) => ({
+              tenantId,
+              productId: line.product.id,
+              unitPrice: line.unitPrice,
+              quantity: line.quantity,
+              lineTotal: line.lineTotal,
+            })),
+          },
+        },
+        select: {
+          id: true,
+          number: true,
+          soldAt: true,
+          subtotal: true,
+          discount: true,
+          total: true,
+          lines: { select: { productId: true, quantity: true, unitPrice: true, lineTotal: true } },
         },
       });
-    }
 
-    return invoice;
-  });
+      for (const line of priced) {
+        await tx.product.update({
+          where: { id: line.product.id },
+          data: { quantity: { decrement: line.quantity } },
+        });
+
+        await tx.stockMovement.create({
+          data: {
+            tenantId,
+            productId: line.product.id,
+            quantityDelta: -line.quantity,
+            type: "SALE",
+            reference: `RetailInvoice:${invoice.id}`,
+          },
+        });
+      }
+
+      return invoice;
+    }
+  );
 
   revalidatePath("/app/invoices");
   revalidatePath("/app/inventory");
   revalidatePath("/app/payment-methods");
   revalidatePath("/app");
 
+  revalidatePath("/admin/activity-log");
   return {
     ok: true,
     invoiceNumber: saved.number,
