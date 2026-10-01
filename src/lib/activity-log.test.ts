@@ -48,6 +48,41 @@ test("filters handle invalid and repeated query parameters", () => {
   assert.equal(parseActivityFilters({ q: "x".repeat(200) }).q.length, 120);
 });
 
+test("admin hides Superadmin activity in rows, totals, and action options even when searched", async () => {
+  const queries: { where: Record<string, unknown>; distinct?: string[] }[] = [];
+  const db = {
+    user: {
+      findMany: async (args: unknown) => {
+        assert.deepEqual(args, { where: { role: "SUPERADMIN" }, select: { id: true } });
+        return [{ id: "super1" }, { id: "super2" }];
+      },
+    },
+    auditLog: {
+      count: async (args: { where: Record<string, unknown> }) => {
+        queries.push(args);
+        return 0;
+      },
+      findMany: async (args: { where: Record<string, unknown>; distinct?: string[] }) => {
+        queries.push(args);
+        return [];
+      },
+    },
+  } as unknown as Pick<PrismaClient, "auditLog" | "user">;
+  for (const scope of [{ admin: true as const }, { admin: true as const, tenantId: "gym1" }]) {
+    queries.length = 0;
+    const result = await queryActivityLog(db, scope, { q: "super1", action: "tenant.create", page: 99 });
+    assert.equal(queries.length, 3);
+    for (const query of queries) {
+      assert.deepEqual(query.where.actorId, { notIn: ["super1", "super2"] });
+      assert.deepEqual(query.where.tenantId, scope.tenantId ?? { not: null });
+    }
+    assert.deepEqual(result.rows, []);
+    assert.deepEqual(result.actions, []);
+    assert.equal(result.total, 0);
+    assert.equal(result.page, 1);
+  }
+});
+
 test("summaries expose only intended fields and handle incomplete older records", () => {
   const summary = activitySummary("tenant.create", "Tenant:1", {
     name: "Gym",

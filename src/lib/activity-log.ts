@@ -126,7 +126,15 @@ export async function queryActivityLog(
   const tenantId = scope.tenantId;
   const admin = "admin" in scope && scope.admin;
   if (!admin && !tenantId) throw new Error("Tenant scope required.");
-  const locationScope = tenantId ? { tenantId } : { tenantId: { not: null } };
+  // AuditLog keeps actorId without a User relation. Resolve excluded actors
+  // first, then apply the same scope to rows, totals, and filter options.
+  const superadmins = admin
+    ? await db.user.findMany({ where: { role: "SUPERADMIN" }, select: { id: true } })
+    : [];
+  const locationScope: Prisma.AuditLogWhereInput = {
+    ...(tenantId ? { tenantId } : { tenantId: { not: null } }),
+    ...(superadmins.length ? { actorId: { notIn: superadmins.map((user) => user.id) } } : {}),
+  };
   const where: Prisma.AuditLogWhereInput = {
     ...locationScope,
     ...(filters.action ? { action: filters.action } : {}),
